@@ -1,0 +1,23 @@
+0000000000000000000000000000000000000000 5aeddfdd5d0308506ec63b0e4f8de33e2a39355f Josh Hart <joshcolehart@gmail.com> 1719085871 -0700	clone: from https://github.com/joshchart/kickstart.nvim.git
+5aeddfdd5d0308506ec63b0e4f8de33e2a39355f 66ef57aa155e945e9dfeecf94d24a52f28a6cad8 Josh Hart <joshcolehart@gmail.com> 1719257033 -0700	commit: Add Harpoon and Undotree and updated init
+66ef57aa155e945e9dfeecf94d24a52f28a6cad8 94c8bd39e71c882552aac838ef81f434a9ad2579 Josh Hart <joshcolehart@gmail.com> 1719329672 -0700	commit: add remap keymaps to init
+94c8bd39e71c882552aac838ef81f434a9ad2579 230d4f230ec3bfc96d91b8f92538df71ffa9fcdc Josh Hart <joshcolehart@gmail.com> 1719374008 -0700	commit: added macro to easily replace text
+230d4f230ec3bfc96d91b8f92538df71ffa9fcdc 6de51055b39976ced95cfdab2a6fa056b1324775 Josh Hart <joshcolehart@gmail.com> 1719382866 -0700	commit: Started using gitsigns remaps
+6de51055b39976ced95cfdab2a6fa056b1324775 928c0afb2178403134b2f17209496d66b7b6c048 Josh Hart <joshcolehart@gmail.com> 1719383705 -0700	commit: add fugitive for using git withing nvim
+928c0afb2178403134b2f17209496d66b7b6c048 dd5e266f5efc790f30059b282af02b77e243fac7 Josh Hart <joshcolehart@gmail.com> 1719450013 -0700	commit: add remap file for organization
+dd5e266f5efc790f30059b282af02b77e243fac7 7f4aa967ba5b50e640ac9c435c7c11637d1e2323 Josh Hart <joshcolehart@gmail.com> 1719454026 -0700	commit: add descriptions for keymaps using <leader>
+7f4aa967ba5b50e640ac9c435c7c11637d1e2323 1caa53f903aaa4d5b22e0b535c1c6dfda02ad2f4 Josh Hart <joshcolehart@gmail.com> 1719457492 -0700	commit: add keymap for opening git status with Fugitive
+1caa53f903aaa4d5b22e0b535c1c6dfda02ad2f4 0aad08b1e886112aaa52482c9ee956c7cd620542 Josh Hart <joshcolehart@gmail.com> 1719459318 -0700	commit: add VimBeGood for practicing vim motions
+0aad08b1e886112aaa52482c9ee956c7cd620542 cd269bd851cef6f08774ecdd02a76cc6fdba0e9e Josh Hart <joshcolehart@gmail.com> 1719471336 -0700	commit: add keymap which keeps cursor in center of window
+cd269bd851cef6f08774ecdd02a76cc6fdba0e9e 45d2d9f53478840838950e9fd97f20d19e5dd8e0 Josh Hart <joshcolehart@gmail.com> 1719472927 -0700	commit: add way to help resolve merge conflicts
+45d2d9f53478840838950e9fd97f20d19e5dd8e0 a592ec84f19c7d31df91e2255f7fe45d18e36c6c Josh Hart <joshcolehart@gmail.com> 1719623483 -0700	commit: updated telescope keymaps
+a592ec84f19c7d31df91e2255f7fe45d18e36c6c 739b11b8883cab79e6dbf454f06b0f10bf548ae9 Josh Hart <joshcolehart@gmail.com> 1719623735 -0700	commit: reverted telescope back to kickstart default
+739b11b8883cab79e6dbf454f06b0f10bf548ae9 62b7f68cf473223edc645e47c95485075964013d Josh Hart <joshcolehart@gmail.com> 1720026852 -0700	commit: update keybind to be <leader>r instead of <leader>s for custom replace
+62b7f68cf473223edc645e47c95485075964013d 46f1e0b60613d30c9c18a4425fc4171c9cf8be76 Josh Hart <joshcolehart@gmail.com> 1720833613 -0700	commit: chore: add comments for custom remaps
+46f1e0b60613d30c9c18a4425fc4171c9cf8be76 6f3d5dc4cecd7a7ed17f69b196278fb2ff9e2e91 Josh Hart <joshcolehart@gmail.com> 1721103666 -0700	commit: add leetcode.nvim with shortcuts
+6f3d5dc4cecd7a7ed17f69b196278fb2ff9e2e91 547fd3d013f0feb64950edc84206ce5176010157 Josh Hart <joshcolehart@gmail.com> 1721245861 -0700	commit: Add shortcut to exit leetcode.nvim
+547fd3d013f0feb64950edc84206ce5176010157 806fcb03813a3b08229c53baf84e00cf1401aa74 Josh Hart <joshcolehart@gmail.com> 1723572936 -0700	commit: Update mappings to allign with v3 (which-key)
+806fcb03813a3b08229c53baf84e00cf1401aa74 c1df0110c9282e1e5ad8a0b19ee676a80af3af69 Josh Hart <joshcolehart@gmail.com> 1727535057 -0400	commit: remove VimBeGood
+c1df0110c9282e1e5ad8a0b19ee676a80af3af69 de147d21cf78979c43a9dd92894b4c6a426ce727 Josh Hart <joshcolehart@gmail.com> 1734716327 -0800	commit: Indent Line extension, 80 char line, tab, etc
+de147d21cf78979c43a9dd92894b4c6a426ce727 a05ec66a7345c34974153f615f6649aae0a05b20 Josh Hart <joshcolehart@gmail.com> 1734890721 -0800	commit: Compatible with vscode-neovim
+a05ec66a7345c34974153f615f6649aae0a05b20 77e34596f7d7f4418778a8f428151f0abcc22e78 Josh Hart <joshcolehart@gmail.com> 1738363320 -0500	commit: Updated settings for Cursor and removed WhichKey
