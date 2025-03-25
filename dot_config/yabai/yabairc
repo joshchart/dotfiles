@@ -40,4 +40,8 @@ yabai -m config layout bsp
 
 borders active_color=0xffe1e3e4 inactive_color=0xff494d64 width=5.0 &
 
+# Ghostty hotfix for tab issue (https://ghostty.org/docs/help/macos-tiling-wms)
+yabai -m signal --add app='^Ghostty$' event=window_created action='yabai -m space --layout bsp'
+yabai -m signal --add app='^Ghostty$' event=window_destroyed action='yabai -m space --layout bsp'
+
 echo "yabai configuration loaded.."

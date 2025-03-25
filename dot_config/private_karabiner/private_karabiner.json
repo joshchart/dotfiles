@@ -53,7 +53,7 @@
                                     "key_code": "t",
                                     "modifiers": { "mandatory": [] }
                                 },
-                                "to": [{ "shell_command": "open -a 'WezTerm.app'" }],
+                                "to": [{ "shell_command": "open -a 'Ghostty.app'" }],
                                 "type": "basic"
                             },
                             {
@@ -477,7 +477,7 @@
                                             "value": 1
                                         }
                                     },
-                                    { "shell_command": "open -a 'WezTerm.app'" }
+                                    { "shell_command": "open -a 'Ghostty.app'" }
                                 ],
                                 "type": "basic"
                             }
