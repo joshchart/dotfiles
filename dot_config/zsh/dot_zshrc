@@ -1,0 +1,130 @@
+# ------------------------------------------------------------------------------
+# -----------------------------------plugins------------------------------------
+# ------------------------------------------------------------------------------
+HISTSIZE=5000
+HISTFILE="$XDG_CACHE_HOME"/zsh/history
+SAVEHIST=5000
+setopt appendhistory
+setopt sharehistory
+setopt incappendhistory
+
+zstyle ':zim:zmodule' use 'degit'
+ZVM_INIT_MODE=sourcing
+
+ZIM_HOME="$XDG_CACHE_HOME"/zim
+if [[ ! -e ${ZIM_HOME}/zimfw.zsh ]]; then
+  curl -fsSL --create-dirs -o ${ZIM_HOME}/zimfw.zsh \
+      https://github.com/zimfw/zimfw/releases/latest/download/zimfw.zsh
+fi
+# Install missing modules, and update ${ZIM_HOME}/init.zsh if missing or outdated.
+if [[ ! ${ZIM_HOME}/init.zsh -nt ${ZDOTDIR:-${HOME}}/.zimrc ]]; then
+  source ${ZIM_HOME}/zimfw.zsh init -q
+fi
+source ${ZIM_HOME}/init.zsh
+
+# ------------------------------------------------------------------------------
+# ------------------------------- ENVIRONMENT ----------------------------------
+# ------------------------------------------------------------------------------
+
+# Path configuration
+export PYENV_ROOT="$HOME/.pyenv"
+path=(
+  "/opt/homebrew/opt/libpq/bin"
+  "$HOME/.cargo/bin"
+  "$HOME/.opam/4.14.0/bin"
+  "$PYENV_ROOT/bin"
+  "$PYENV_ROOT/shims"
+  "/opt/homebrew/bin"
+  "/opt/homebrew/sbin"
+  "/usr/local/bin"
+  "/usr/bin"
+  "/bin"
+  "/usr/sbin"
+  "/sbin"
+  "/opt/X11/bin"
+  $path
+)
+export PATH
+
+# API keys
+if [ -f "$HOME/.zsh_secrets" ]; then
+    source "$HOME/.zsh_secrets"
+fi
+
+# ------------------------------------------------------------------------------
+# ---------------------------------- TOOLS -------------------------------------
+# ------------------------------------------------------------------------------
+
+# Pyenv initialization
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"
+
+# Starship prompt
+eval "$(starship init zsh)"
+
+# Zoxide (smart cd)
+# eval "$(zoxide init zsh)"
+
+# OPAM configuration (OCaml package manager)
+[[ ! -r $HOME/.opam/opam-init/init.zsh ]] || source $HOME/.opam/opam-init/init.zsh > /dev/null 2> /dev/null
+
+# Google Cloud SDK
+[[ ! -f $HOME/google-cloud-sdk/path.zsh.inc ]] || source $HOME/google-cloud-sdk/path.zsh.inc
+[[ ! -f $HOME/google-cloud-sdk/completion.zsh.inc ]] || source $HOME/google-cloud-sdk/completion.zsh.inc
+
+# ------------------------------------------------------------------------------
+# --------------------------------- ALIASES ------------------------------------
+# ------------------------------------------------------------------------------
+
+alias vim='nvim'
+
+# Directory navigation
+alias ..="cd .."
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias .....='cd ../../../..'
+alias ......='cd ../../../../..'
+
+# Dotfiles management
+alias ez="chezmoi edit $XDG_CONFIG_HOME/zsh/.zshrc" #FIX: Not set up
+alias sz="source $XDG_CONFIG_HOME/zsh/.zshrc"       #FIX: Not set up
+alias dedit='chezmoi edit'
+
+# ------------------------------------------------------------------------------
+# -------------------------------------git--------------------------------------
+# ------------------------------------------------------------------------------
+
+alias g='gt'
+alias gs='git status -sb'
+alias gd='git diff'
+alias gdh='git diff HEAD'
+alias gl='git log'
+alias ga='git add'
+alias gaa='git add -A'
+alias gps='git push -u'
+alias gpsf='git push --force'
+alias gcd='cd $(git rev-parse --show-toplevel)'
+
+# Git functions
+function co() {
+  git checkout $(gb)
+}
+
+function gbd() {
+  gt branch -D $(gb)
+}
+
+function delete_current_branch() {
+  is_in_gt_repo || return
+  refname=$(gt rev-parse --abbrev-ref HEAD)
+  gt checkout master
+  gt update-ref -d $refname
+}
+
+# ------------------------------------------------------------------------------
+# ------------------------------------local-------------------------------------
+# ------------------------------------------------------------------------------
+
+local_conf="$HOME/local_bin/local_conf.sh"
+test -f "$local_conf" && source "$local_conf"
+

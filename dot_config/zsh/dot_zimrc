@@ -1,0 +1,22 @@
+# https://zimfw.sh/docs/modules/
+zmodule completion
+zmodule input
+zmodule environment
+zmodule exa
+zmodule fzf
+
+# others
+zmodule ohmyzsh/ohmyzsh --root plugins/fancy-ctrl-z
+zmodule zsh-users/zsh-autosuggestions
+zmodule zdharma-continuum/fast-syntax-highlighting
+
+zmodule joke/zim-chezmoi
+
+# SPECIAL
+
+# NOTE: intentionally run this second to last
+zmodule jeffreytse/zsh-vi-mode
+
+# NOTE: this must go _after_ `jeffreytse/zsh-vi-mode`, with `ZVM_INIT_MODE=sourcing` set
+# to ensure that `zsh-vi-mode` doesn't clobber its bindkey.
+zmodule zdharma-continuum/history-search-multi-word
