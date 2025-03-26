@@ -1,0 +1,128 @@
+{
+    "profiles": [
+        {
+            "complex_modifications": {
+                "parameters": {
+                    "basic.simultaneous_threshold_milliseconds": 500,
+                    "basic.to_delayed_action_delay_milliseconds": 100,
+                    "basic.to_if_held_down_threshold_milliseconds": 100
+                },
+                "rules": [
+                    {
+                        "description": "o Launcher",
+                        "manipulators": [
+                            // Single-key app launchers
+                            ...[
+                                ["c", "Cursor.app"], ["w", "Warp.app"], ["t", "Ghostty.app"],
+                                ["a", "Arc.app"], ["d", "Discord.app"], ["s", "Music.app"],
+                                ["f", "Finder.app"], ["g", "Google Chrome.app"], ["n", "Obsidian.app"],
+                                ["m", "Messages.app"]
+                            ].map(([key, app]) => ({
+                                "conditions": [{ "name": "launcher_mode_v4", "type": "variable_if", "value": 1 }],
+                                "from": { "key_code": key, "modifiers": { "mandatory": [] } },
+                                "to": [{ "shell_command": `open -a '${app}'` }],
+                                "type": "basic"
+                            })),
+
+                            // Simultaneous semicolon+key app launchers
+                            ...[
+                                ["n", "Obsidian.app"], ["m", "Messages.app"], ["s", "Music.app"],
+                                ["c", "Cursor.app"], ["a", "Arc.app"], ["g", "Google Chrome.app"],
+                                ["f", "Finder.app"], ["d", "Discord.app"], ["w", "Warp.app"], ["t", "Ghostty.app"]
+                            ].map(([key, app]) => ({
+                                "from": {
+                                    "simultaneous": [{ "key_code": "semicolon" }, { "key_code": key }],
+                                    "simultaneous_options": {
+                                        "key_down_order": "strict",
+                                        "key_up_order": "strict_inverse",
+                                        "to_after_key_up": [{ "set_variable": { "name": "launcher_mode_v4", "value": 0 } }]
+                                    }
+                                },
+                                "to": [
+                                    { "set_variable": { "name": "launcher_mode_v4", "value": 1 } },
+                                    { "shell_command": `open -a '${app}'` }
+                                ],
+                                "type": "basic"
+                            }))
+                        ]
+                    },
+                    {
+                        "description": "Shifts Move Forward and Backward by 1 word",
+                        "manipulators": [
+                            ["left_shift", "left_arrow"], ["right_shift", "right_arrow"]
+                        ].map(([key, arrow]) => ({
+                            "from": { "key_code": key },
+                            "to": [{ "key_code": key }],
+                            "to_if_alone": [{ "key_code": arrow, "modifiers": ["option"] }],
+                            "type": "basic"
+                        }))
+                    },
+                    {
+                        "manipulators": [
+                            {
+                                "description": "Right command to left_command+left_option",
+                                "from": { "key_code": "right_command", "modifiers": { "optional": ["any"] } },
+                                "to": [{ "key_code": "left_command", "modifiers": ["left_option"] }],
+                                "type": "basic"
+                            },
+                            {
+                                "description": "Right Command + A to Esc",
+                                "from": { "key_code": "a", "modifiers": { "mandatory": ["left_command", "left_option"] } },
+                                "to": [{ "key_code": "escape" }],
+                                "type": "basic"
+                            }
+                        ]
+                    },
+                    {
+                        "description": "CAPS_LOCK to HYPER/BACKSPACE and arrow keys",
+                        "manipulators": [
+                            {
+                                "from": { "key_code": "caps_lock", "modifiers": { "optional": ["any"] } },
+                                "to": [{ "key_code": "left_shift", "modifiers": ["left_command", "left_control", "left_option"] }],
+                                "to_if_alone": [{ "key_code": "delete_or_backspace" }],
+                                "type": "basic"
+                            },
+                            // Hyper+key mappings
+                            ...[
+                                ["delete_or_backspace", "delete_forward"],
+                                ["h", "left_arrow"], ["k", "up_arrow"], ["j", "down_arrow"], ["l", "right_arrow"],
+                                ["g", "button1"], [",", ""], [".", ""], ["/", ""]
+                            ].map(([key, action]) => ({
+                                "description": action ? `Hyper + ${key} to ${action}` : `Disable sysdiagnose for ${key}`,
+                                "from": {
+                                    "key_code": key,
+                                    "modifiers": { "mandatory": ["command", "shift", "option", "control"] }
+                                },
+                                "to": action ? [{ action.includes("_") ? "pointing_button" : "key_code": action }] : [],
+                                "type": "basic"
+                            }))
+                        ]
+                    }
+                ]
+            },
+            "devices": [
+                // Devices configuration remains similar as it's hardware-specific
+                // ... (keep your existing devices array as-is)
+            ],
+            "fn_function_keys": [
+                { "from": { "key_code": "f3" }, "to": [{ "key_code": "mission_control" }] },
+                { "from": { "key_code": "f4" }, "to": [{ "key_code": "launchpad" }] },
+                { "from": { "key_code": "f5" }, "to": [{ "key_code": "illumination_decrement" }] },
+                { "from": { "key_code": "f6" }, "to": [{ "key_code": "illumination_increment" }] },
+                { "from": { "key_code": "f9" }, "to": [{ "consumer_key_code": "fastforward" }] }
+            ],
+            "name": "Default profile",
+            "selected": true,
+            "virtual_hid_keyboard": {
+                "country_code": 0,
+                "indicate_soty_modifier_keys_state": true,
+                "indicate_sticky_modifier_keys_state": false,
+                "keyboard_type_v2": "ansi"
+            }
+        },
+        {
+            "name": "Guest",
+            "virtual_hid_keyboard": { "country_code": 0 }
+        }
+    ]
+}
