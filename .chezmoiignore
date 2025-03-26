@@ -6,3 +6,6 @@
 .config/karabiner/automatic_backups/
 .config/karabiner/.DS_Store
 
+.config/zsh/.zcompdump
+.config/zsh/.zcompdump.dat
+.config/zsh/.zcompdump.zwc
