@@ -1,4 +1,8 @@
 .config/nvim/.git
 
 .config/tmux/plugins/
-.config/tmux/plugins/**
+
+.config/karabiner/assets/
+.config/karabiner/automatic_backups/
+.config/karabiner/.DS_Store
+
