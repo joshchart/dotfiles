@@ -1,0 +1,29 @@
+# Taps
+tap "homebrew/bundle"
+tap "homebrew/cask-fonts"
+tap "homebrew/services"
+tap "felixkratz/formulae"   # Window Management
+tap "koekeishiya/formulae"  # Window Management
+
+# Formulae
+## Developer tools
+brew "neovim"
+brew "tmux"
+brew "starship"
+brew "chezmoi"
+
+## Window Management
+brew "koekeishiya/formulae/yabai"
+brew "koekeishiya/formulae/skhd"
+brew "felixkratz/formulae/borders"
+brew "felixkratz/formulae/sketchybar", args: ["HEAD"]
+brew "felixkratz/formulae/svim"
+
+# Casks
+cask "ghostty"  # Terminal
+
+# Additional dependencies and tools
+brew "git"
+brew "ripgrep"  # Often used with Neovim
+brew "tree"     # Helpful for directory structure visualization
+brew "grep"
