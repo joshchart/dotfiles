@@ -11,6 +11,7 @@ brew "neovim"
 brew "tmux"
 brew "starship"
 brew "chezmoi"
+brew "tmux-sessionizer"
 
 ## Window Management
 brew "koekeishiya/formulae/yabai"
