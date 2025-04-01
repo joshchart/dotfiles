@@ -15,6 +15,10 @@ return {
       },
       copilot = {
         enabled = true,
+        model = 'claude-3.7-sonnet',
+      },
+      gemini = {
+        model = 'gemini-2.5-pro-exp-03-25',
       },
     },
     -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
@@ -56,6 +60,7 @@ return {
           file_types = { 'markdown', 'Avante' },
         },
         ft = { 'markdown', 'Avante' },
+        latex = { enabled = false },
       },
     },
   },
