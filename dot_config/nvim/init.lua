@@ -44,7 +44,7 @@ vim.opt.timeoutlen = 300
 vim.opt.inccommand = 'split'
 
 -- Minimal number of screen lines to keep above and below the cursor.
-vim.opt.scrolloff = 10
+vim.opt.scrolloff = 8
 
 -- Show line marking 80 chars
 -- vim.opt.colorcolumn = '80'
