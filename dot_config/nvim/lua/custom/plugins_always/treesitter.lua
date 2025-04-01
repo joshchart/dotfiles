@@ -31,4 +31,21 @@ return {
       --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
     end,
   },
+  { -- Show current context at the top of the buffer
+    'nvim-treesitter/nvim-treesitter-context',
+    config = function()
+      require('treesitter-context').setup {
+        enable = true, -- Enable this plugin (can be toggled later)
+        throttle = true, -- Throttles updates for performance
+        max_lines = 0, -- No limit on the number of lines shown for context
+        patterns = { -- Match patterns for context (default is for most programming languages)
+          default = {
+            'class',
+            'function',
+            'method',
+          },
+        },
+      }
+    end,
+  },
 }
