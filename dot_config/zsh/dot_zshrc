@@ -47,8 +47,8 @@ path=(
 export PATH
 
 # API keys
-if [ -f "$HOME/.zsh_secrets" ]; then
-    source "$HOME/.zsh_secrets"
+if [ -f "$HOME/.config/zsh/.zsh_secrets" ]; then
+    source "$HOME/.config/zsh/.zsh_secrets"
 fi
 
 # ------------------------------------------------------------------------------
@@ -86,8 +86,8 @@ alias .....='cd ../../../..'
 alias ......='cd ../../../../..'
 
 # Dotfiles management
-alias ez="chezmoi edit $XDG_CONFIG_HOME/zsh/.zshrc" #FIX: Not set up
-alias sz="source $XDG_CONFIG_HOME/zsh/.zshrc"       #FIX: Not set up
+# alias ez="chezmoi edit $XDG_CONFIG_HOME/zsh/.zshrc" #FIX: Not set up
+# alias sz="source $XDG_CONFIG_HOME/zsh/.zshrc"       #FIX: Not set up
 alias dedit='chezmoi edit'
 
 # ------------------------------------------------------------------------------
