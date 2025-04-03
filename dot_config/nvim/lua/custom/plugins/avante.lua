@@ -60,7 +60,6 @@ return {
           file_types = { 'markdown', 'Avante' },
         },
         ft = { 'markdown', 'Avante' },
-        latex = { enabled = false },
       },
     },
   },
