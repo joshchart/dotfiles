@@ -35,6 +35,14 @@ local icons = {
 			disconnected = "􀙈",
 			router = "􁓤",
 		},
+		-- SVIM Icons from bash script
+		svim = {
+			mode_normal = "􀂯",
+			mode_insert = "􀂥",
+			mode_visual = "􀂿",
+			mode_cmd = "􀂙",
+			mode_pending = "􀈏",
+		},
 		media = {
 			back = "􀊊",
 			forward = "􀊌",

@@ -33,7 +33,7 @@ local function updateSpaceIcons(spaceId, workspaceName, callback)
 
 		-- If no apps found, use a placeholder or keep empty based on preference
 		-- The shell script used " —", let's keep it empty for now.
-		-- icon_strip = apps_found and icon_strip or " —"
+		icon_strip = apps_found and icon_strip or " —"
 
 		if spaces[spaceId] then
 			spaces[spaceId].item:set({
