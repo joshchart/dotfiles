@@ -3,80 +3,25 @@ return {
     'yetone/avante.nvim',
     event = 'VeryLazy',
     version = false, -- Never set this value to "*"! Never!
-    -- Multiple Copilot: https://github.com/yetone/avante.nvim/issues/1566
     opts = {
       provider = 'copilot',
-      -- auto_suggestions_provider = "copilot",
-      copilot = {
-        endpoint = 'https://api.githubcopilot.com',
-        model = 'gemini-2.5-pro',
-      },
       openai = {
-        hide_in_model_selector = true,
+        endpoint = 'https://api.openai.com/v1',
+        model = 'gpt-4o', -- your desired model (or use gpt-4o, etc.)
+        timeout = 30000, -- timeout in milliseconds, increase this for reasoning models
+        temperature = 0,
+        max_completion_tokens = 8192, -- increase this to include reasoning tokens (for reasoning models)
+        --reasoning_effort = "medium", -- low|medium|high, only used for reasoning models
       },
-      claude = {
-        hide_in_model_selector = true,
+      copilot = {
+        enabled = true,
+        -- model = 'gemini-2.5-pro',
+        -- model = 'claude-3.7-sonnet',
+        model = 'claude-3.5-sonnet',
+        -- model = 'gpt-4.1',
       },
-      aihubmix = {
-        hide_in_model_selector = true,
-      },
-      ['aihubmix-claude'] = {
-        hide_in_model_selector = true,
-      },
-      gemini = {
-        hide_in_model_selector = true,
-      },
-      vertex = {
-        hide_in_model_selector = true,
-      },
-      vertex_claude = {
-        hide_in_model_selector = true,
-      },
-      cohere = {
-        hide_in_model_selector = true,
-      },
-      bedrock = {
-        hide_in_model_selector = true,
-      },
-      ['bedrock-claude-3.7-sonnet'] = {
-        hide_in_model_selector = true,
-      },
-      ['claude-haiku'] = {
-        hide_in_model_selector = true,
-      },
-      ['claude-opus'] = {
-        hide_in_model_selector = true,
-      },
-      ['openai-gpt-4o-mini'] = {
-        hide_in_model_selector = true,
-      },
-      vendors = {
-        copilot_claude_3_7 = {
-          __inherited_from = 'copilot',
-          model = 'claude-3.7-sonnet',
-        },
-        copilot_claude_3_7_thinking = {
-          __inherited_from = 'copilot',
-          model = 'claude-3.7-sonnet-thought',
-        },
-        copilot_gemini_2_0_flash = {
-          __inherited_from = 'copilot',
-          model = 'gemini-2.0-flash-001',
-        },
-        copilot_gemini_2_5_pro = {
-          __inherited_from = 'copilot',
-          model = 'gemini-2.5-pro',
-        },
-        copilot_openai_o4_mini_high = {
-          __inherited_from = 'copilot',
-          model = 'o4-mini-high',
-        },
-        copilot_openai_4_1 = {
-          __inherited_from = 'copilot',
-          model = 'gpt-4.1',
-        },
-      }, -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
     },
+    -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
     build = 'make',
     -- build = "powershell -ExecutionPolicy Bypass -File Build.ps1 -BuildFromSource false" -- for windows
     dependencies = {
@@ -104,7 +49,7 @@ return {
               insert_mode = true,
             },
             -- required for Windows users
-            use_absolute_path = true,
+            -- use_absolute_path = true,
           },
         },
       },
