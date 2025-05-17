@@ -7,6 +7,8 @@ return {
         options = {
           laststatus = 3, -- 0 to Hide the status line in Zen Mode
         },
+        todo = { enabled = false }, -- if set to "true", todo-comments.nvim highlights will be disabled
+        gitsigns = { enabled = false }, -- disables git signs
       },
     },
     config = function(_, opts)
