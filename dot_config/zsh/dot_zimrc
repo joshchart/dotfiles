@@ -6,7 +6,7 @@ zmodule exa
 zmodule fzf
 
 # others
-zmodule ohmyzsh/ohmyzsh --root plugins/fancy-ctrl-z
+zmodule ohmyzsh/ohmyzsh --root plugins/fancy-ctrl-z # doesnt work
 zmodule zsh-users/zsh-autosuggestions
 zmodule zdharma-continuum/fast-syntax-highlighting
 
