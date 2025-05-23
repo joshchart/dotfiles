@@ -15,10 +15,11 @@ return {
       },
       copilot = {
         enabled = true,
+        -- model = 'gpt-4.1',
         -- model = 'gemini-2.5-pro',
         -- model = 'claude-3.7-sonnet',
-        model = 'claude-3.5-sonnet',
-        -- model = 'gpt-4.1',
+        -- model = 'claude-3.5-sonnet',
+        model = 'claude-sonnet-4',
       },
     },
     -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
