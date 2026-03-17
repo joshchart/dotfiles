@@ -12,6 +12,7 @@ return {
   ---@module "auto-session"
   ---@type AutoSession.Config
   opts = {
+    args_allow_single_directory = false,
     suppressed_dirs = { '~/', '~/Downloads', '/', '/tmp' },
     no_restore_cmds = {
       function()

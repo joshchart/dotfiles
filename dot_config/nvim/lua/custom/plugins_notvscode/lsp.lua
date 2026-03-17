@@ -11,9 +11,15 @@ return {
       -- NOTE: `opts = {}` is the same as calling `require('fidget').setup({})`
       { 'j-hui/fidget.nvim', opts = {} },
 
-      -- `neodev` configures Lua LSP for your Neovim config, runtime and plugins
-      -- used for completion, annotations and signatures of Neovim apis
-      { 'folke/neodev.nvim', opts = {} },
+      {
+        'folke/lazydev.nvim',
+        ft = 'lua',
+        opts = {
+          library = {
+            { path = '${3rd}/luv/library', words = { 'vim%.uv' } },
+          },
+        },
+      },
     },
     config = function()
       -- Brief aside: **What is LSP?**
@@ -205,6 +211,9 @@ return {
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
       require('mason-lspconfig').setup {
+        automatic_enable = {
+          exclude = { 'stylua' },
+        },
         handlers = {
           function(server_name)
             local server = servers[server_name] or {}
@@ -216,6 +225,9 @@ return {
           end,
         },
       }
+
+      -- Enable Dafny LSP (uses nvim-lspconfig's built-in config from lsp/dafny.lua)
+      vim.lsp.enable('dafny')
     end,
   },
 }
