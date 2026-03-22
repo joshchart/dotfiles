@@ -1,15 +1,17 @@
 {
   "lastChangelogVersion": "0.61.1",
   "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.3-codex",
+  "defaultModel": "gpt-5.4",
   "defaultThinkingLevel": "medium",
   "packages": [
-    "npm:pi-vim"
+    "npm:pi-vim",
+    "npm:pi-provider-kiro"
   ],
   "hideThinkingBlock": false,
   "enabledModels": [
     "openai-codex/gpt-5.4",
-    "openai-codex/gpt-5.3-codex"
+    "openai-codex/gpt-5.3-codex",
+    "kiro/claude-sonnet-4-5"
   ],
   "theme": "tokyo-night",
   "treeFilterMode": "default",
