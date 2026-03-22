@@ -13,3 +13,4 @@
 
 .config/pi/agent/auth.json
 .config/pi/agent/sessions/**
+.config/pi/agent/bin/**
