@@ -10,3 +10,6 @@
 .config/zsh/.zcompdump.dat
 .config/zsh/.zcompdump.zwc
 .config/zsh/.zsh_secrets
+
+.config/pi/agent/auth.json
+.config/pi/agent/sessions/**
