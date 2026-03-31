@@ -1,0 +1,36 @@
+{
+  "lastChangelogVersion": "0.64.0",
+  "defaultProvider": "openai-codex",
+  "defaultModel": "gpt-5.4",
+  "defaultThinkingLevel": "high",
+  "packages": [
+    {
+      "source": "git:github.com/HazAT/pi-interactive-subagents",
+      "extensions": [
+        "-pi-extension/session-artifacts/index.ts",
+        "-pi-extension/subagents/index.ts"
+      ]
+    },
+    "npm:pi-vim",
+    {
+      "source": "npm:pi-provider-kiro",
+      "extensions": [
+        "-dist/index.js"
+      ]
+    }
+  ],
+  "extensions": [
+    "~/workspaces/pi-diff-review/src/index.ts"
+  ],
+  "hideThinkingBlock": true,
+  "enabledModels": [
+    "openai-codex/gpt-5.3-codex",
+    "openai-codex/gpt-5.4",
+    "anthropic/claude-haiku-4-5",
+    "anthropic/claude-opus-4-6",
+    "anthropic/claude-opus-4-5",
+    "anthropic/claude-sonnet-4-6"
+  ],
+  "theme": "tokyo-night",
+  "quietStartup": true
+}
