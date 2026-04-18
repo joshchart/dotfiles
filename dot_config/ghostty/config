@@ -2,3 +2,14 @@ theme = tokyonight
 font-size = 18
 window-save-state = always
 window-colorspace = "display-p3"
+
+# Send Ctrl+number to tmux as CSI-u extended keys (for ctrl+num tmux)
+keybind = ctrl+one=csi:49;5u
+keybind = ctrl+two=csi:50;5u
+keybind = ctrl+three=csi:51;5u
+keybind = ctrl+four=csi:52;5u
+keybind = ctrl+five=csi:53;5u
+keybind = ctrl+six=csi:54;5u
+keybind = ctrl+seven=csi:55;5u
+keybind = ctrl+eight=csi:56;5u
+keybind = ctrl+nine=csi:57;5u
