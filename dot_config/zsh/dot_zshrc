@@ -31,7 +31,6 @@ export PYENV_ROOT="$HOME/.pyenv"
 path=(
   "/opt/homebrew/opt/libpq/bin"
   "$HOME/.cargo/bin"
-  "$HOME/.opam/4.14.0/bin"
   "$PYENV_ROOT/bin"
   "$PYENV_ROOT/shims"
   "/opt/homebrew/bin"
@@ -51,6 +50,11 @@ if [ -f "$HOME/.config/zsh/.zsh_secrets" ]; then
     source "$HOME/.config/zsh/.zsh_secrets"
 fi
 
+# Opencode
+export EDITOR=nvim
+export RIPGREP_CONFIG_PATH="$HOME/.config/ripgrep/ripgreprc"
+export PI_CODING_AGENT_DIR="$HOME/.config/pi/agent"
+
 # ------------------------------------------------------------------------------
 # ---------------------------------- TOOLS -------------------------------------
 # ------------------------------------------------------------------------------
@@ -66,7 +70,7 @@ eval "$(starship init zsh)"
 # eval "$(zoxide init zsh)"
 
 # OPAM configuration (OCaml package manager)
-[[ ! -r $HOME/.opam/opam-init/init.zsh ]] || source $HOME/.opam/opam-init/init.zsh > /dev/null 2> /dev/null
+# [[ ! -r $HOME/.opam/opam-init/init.zsh ]] || source $HOME/.opam/opam-init/init.zsh > /dev/null 2> /dev/null
 
 # Google Cloud SDK
 [[ ! -f $HOME/google-cloud-sdk/path.zsh.inc ]] || source $HOME/google-cloud-sdk/path.zsh.inc
@@ -128,3 +132,10 @@ function delete_current_branch() {
 local_conf="$HOME/local_bin/local_conf.sh"
 test -f "$local_conf" && source "$local_conf"
 
+export PATH="$HOME/.local/bin:$PATH"
+export PATH="$(brew --prefix)/opt/dotnet@6/bin:$PATH"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+[ -s "/Users/joshhart/.bun/_bun" ] && source "/Users/joshhart/.bun/_bun"
