@@ -276,7 +276,7 @@
                                             "value": 1
                                         }
                                     },
-                                    { "shell_command": "open -a 'Arc.app'" }
+                                    { "shell_command": "open -a 'Helium.app'" }
                                 ],
                                 "type": "basic"
                             },
@@ -369,7 +369,7 @@
                                             "value": 1
                                         }
                                     },
-                                    { "shell_command": "open -a 'Discord.app'" }
+                                    { "shell_command": "open -a 'Vesktop.app'" }
                                 ],
                                 "type": "basic"
                             },
