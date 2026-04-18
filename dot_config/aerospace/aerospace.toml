@@ -180,6 +180,7 @@ alt-shift-k = ['join-with up', 'mode main']
 alt-shift-l = ['join-with right', 'mode main']
 
 
+# Works for only terminal not for Ghostty + App
 # [[on-window-detected]]
 # if.app-id="com.mitchellh.ghostty"
 # run= [
