@@ -1,48 +1,47 @@
 return {
-  -- NOTE: Plugins can also be configured to run Lua code when they are loaded.
-  --
-  -- This is often very useful to both group configuration, as well as handle
-  -- lazy loading plugins that don't need to be loaded immediately at startup.
-  --
-  -- For example, in the following configuration, we use:
-  --  event = 'VimEnter'
-  --
-  -- which loads which-key before all the UI elements are loaded. Events can be
-  -- normal autocommands events (`:help autocmd-events`).
-  --
-  -- Then, because we use the `config` key, the configuration only runs
-  -- after the plugin has been loaded:
-  --  config = function() ... end
-
-  -- {
-  --   'folke/which-key.nvim',
-  --   event = 'VimEnter',
-  --   config = function()
-  --     local wk = require 'which-key'
-  --     wk.setup()
-  --
-  --     -- Adding normal mode mappings
-  --     wk.add {
-  --       { '<leader>c', group = '[C]ode' }, -- Group for code-related keybinds
-  --       { '<leader>d', group = '[D]ocument' }, -- Group for document-related keybinds
-  --       { '<leader>r', group = '[R]ename' }, -- Group for rename-related keybinds
-  --       { '<leader>s', group = '[S]earch' }, -- Group for search-related keybinds
-  --       { '<leader>w', group = '[W]orkspace' }, -- Group for workspace-related keybinds
-  --       { '<leader>t', group = '[T]oggle' }, -- Group for toggle-related keybinds
-  --       { '<leader>h', group = 'Git [H]unk' }, -- Group for Git hunk-related keybinds
-  --       { '<leader>c_', hidden = true }, -- Hidden keymap
-  --       { '<leader>d_', hidden = true }, -- Hidden keymap
-  --       { '<leader>r_', hidden = true }, -- Hidden keymap
-  --       { '<leader>s_', hidden = true }, -- Hidden keymap
-  --       { '<leader>w_', hidden = true }, -- Hidden keymap
-  --       { '<leader>t_', hidden = true }, -- Hidden keymap
-  --       { '<leader>h_', hidden = true }, -- Hidden keymap
-  --     }
-  --
-  --     -- Adding visual mode mappings
-  --     wk.add {
-  --       { '<leader>h', desc = 'Git [H]unk', mode = 'v' }, -- Visual mode mapping for Git Hunk
-  --     }
-  --   end,
-  -- },
+  {
+    'folke/which-key.nvim',
+    event = 'VimEnter',
+    opts = {
+      delay = 400,
+      icons = {
+        mappings = vim.g.have_nerd_font,
+        keys = vim.g.have_nerd_font and {} or {
+          Up = '<Up> ',
+          Down = '<Down> ',
+          Left = '<Left> ',
+          Right = '<Right> ',
+          C = '<C-…> ',
+          M = '<M-…> ',
+          D = '<D-…> ',
+          S = '<S-…> ',
+          CR = '<CR> ',
+          Esc = '<Esc> ',
+          ScrollWheelDown = '<ScrollWheelDown> ',
+          ScrollWheelUp = '<ScrollWheelUp> ',
+          NL = '<NL> ',
+          BS = '<BS> ',
+          Space = '<Space> ',
+          Tab = '<Tab> ',
+          F1 = '<F1>',
+          F2 = '<F2>',
+          F3 = '<F3>',
+          F4 = '<F4>',
+          F5 = '<F5>',
+          F6 = '<F6>',
+          F7 = '<F7>',
+          F8 = '<F8>',
+          F9 = '<F9>',
+          F10 = '<F10>',
+          F11 = '<F11>',
+          F12 = '<F12>',
+        },
+      },
+      spec = {
+        { '<leader>s', group = '[S]earch' },
+        { '<leader>t', group = '[T]oggle' },
+        { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
+      },
+    },
+  },
 }

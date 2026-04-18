@@ -25,3 +25,35 @@ vim.keymap.set('n', '<leader>Y', [["+Y]], { desc = '[Y]ank line to OS clipboard'
 vim.keymap.set({ 'n', 'v' }, '<leader>d', [["_d]], { desc = '[d]elete w/o vim clipboard' })
 
 vim.keymap.set('n', '<leader>r', [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
+
+vim.keymap.set('n', '<C-j>', function()
+  if vim.fn.exists ':NvimTmuxNavigateDown' ~= 0 then
+    vim.cmd.NvimTmuxNavigateDown()
+  else
+    vim.cmd.wincmd 'j'
+  end
+end, { desc = 'Navigate down' })
+
+vim.keymap.set('n', '<C-k>', function()
+  if vim.fn.exists ':NvimTmuxNavigateUp' ~= 0 then
+    vim.cmd.NvimTmuxNavigateUp()
+  else
+    vim.cmd.wincmd 'k'
+  end
+end, { desc = 'Navigate up' })
+
+vim.keymap.set('n', '<C-l>', function()
+  if vim.fn.exists ':NvimTmuxNavigateRight' ~= 0 then
+    vim.cmd.NvimTmuxNavigateRight()
+  else
+    vim.cmd.wincmd 'l'
+  end
+end, { desc = 'Navigate right' })
+
+vim.keymap.set('n', '<C-h>', function()
+  if vim.fn.exists ':NvimTmuxNavigateLeft' ~= 0 then
+    vim.cmd.NvimTmuxNavigateLeft()
+  else
+    vim.cmd.wincmd 'h'
+  end
+end, { desc = 'Navigate left' })

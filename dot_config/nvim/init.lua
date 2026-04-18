@@ -99,14 +99,6 @@ if vim.g.vscode then
 else
   -- vim.keymap.set('n', '<leader>pv', vim.cmd.Ex, { desc = '[p]roject [v]iew' })
 
-  -- Remaps for Leetcode.nvim
-  vim.keymap.set('n', '<leader>l', ':Leet<CR>', { desc = 'Open LeetCode dashboard' })
-  vim.keymap.set('n', '<leader>lr', ':Leet run<CR>', { desc = 'Run LeetCode problem' })
-  vim.keymap.set('n', '<leader>lg', ':Leet lang<CR>', { desc = 'Change LeetCode language' })
-  vim.keymap.set('n', '<leader>ls', ':Leet submit<CR>', { desc = 'Submit LeetCode solution' })
-  vim.keymap.set('n', '<leader>ll', ':Leet list<CR>', { desc = 'List LeetCode problems' })
-  vim.keymap.set('n', '<leader>le', ':Leet exit<CR>', { desc = 'Exit LeetCode' })
-
   -- Show which line your cursor is on (NOTE: doesn't work with vscode)
   vim.opt.cursorline = true
 
@@ -162,10 +154,10 @@ else
   --  Use CTRL+<hjkl> to switch between windows
   --
   --  See `:help wincmd` for a list of all window commands
-  vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
-  vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
-  vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
-  vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
+  -- vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
+  -- vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
+  -- vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
+  -- vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
   -- [[ Basic Autocommands ]]
   --  See `:help lua-guide-autocommands`
