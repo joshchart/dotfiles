@@ -2,8 +2,8 @@
 tap "homebrew/bundle"
 tap "homebrew/cask-fonts"
 tap "homebrew/services"
-tap "felixkratz/formulae"   # Window Management
-tap "koekeishiya/formulae"  # Window Management
+tap "felixkratz/formulae"   # sketchybar / borders (Window Management)
+tap "nikitabobko/tap"       # Aerospace (Window Management) 
 
 # Formulae
 ## Developer tools
@@ -13,18 +13,19 @@ brew "starship"
 brew "chezmoi"
 brew "tmux-sessionizer"
 
-## Window Management
-brew "koekeishiya/formulae/yabai"
-brew "koekeishiya/formulae/skhd"
+## Desktop utilities
 brew "felixkratz/formulae/borders"
 brew "felixkratz/formulae/sketchybar", args: ["HEAD"]
-brew "felixkratz/formulae/svim"
 
 # Casks
-cask "ghostty"  # Terminal
+cask "ghostty"                      # Terminal
+cask "helium-browser"               # Browser
+cask "karabiner-elements"           # Keyboard remapping
+cask "nikitabobko/tap/aerospace"    # Window management
 
 # Additional dependencies and tools
 brew "git"
 brew "ripgrep"  # Often used with Neovim
 brew "tree"     # Helpful for directory structure visualization
 brew "grep"
+brew "node"     # used for Pi
