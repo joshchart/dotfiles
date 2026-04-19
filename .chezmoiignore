@@ -5,6 +5,14 @@
 
 .config/tmux/plugins/
 
+.config/yabai
+.config/yabai/**
+.config/skhd
+.config/skhd/**
+.config/svim
+.config/svim/**
+.yabairc
+
 .config/karabiner/assets/
 .config/karabiner/automatic_backups/
 .config/karabiner/.DS_Store
