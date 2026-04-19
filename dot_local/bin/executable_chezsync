@@ -81,16 +81,29 @@ managed_roots() {
   chezmoi managed | awk '
     {
       path=$0
-      if (path ~ /^\.config\//) {
-        n=split(path, parts, "/")
-        if (n >= 3) {
-          print parts[1] "/" parts[2]
-        } else {
-          print path
-        }
+      n=split(path, parts, "/")
+
+      if ((parts[1] == ".config" || parts[1] == ".local") && n >= 2) {
+        root = parts[1] "/" parts[2]
       } else {
-        n=split(path, parts, "/")
-        print parts[1]
+        root = parts[1]
+      }
+
+      roots[root] = 1
+    }
+
+    END {
+      for (root in roots) {
+        keep = 1
+        for (other in roots) {
+          if (root != other && index(other, root "/") == 1) {
+            keep = 0
+            break
+          }
+        }
+        if (keep) {
+          print root
+        }
       }
     }
   ' | sort -u
