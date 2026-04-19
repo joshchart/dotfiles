@@ -9,6 +9,13 @@
 
 .config/tmux/plugins/
 
+.config/sketchybar/helpers/event_providers/cpu_load/bin
+.config/sketchybar/helpers/event_providers/cpu_load/bin/**
+.config/sketchybar/helpers/event_providers/network_load/bin
+.config/sketchybar/helpers/event_providers/network_load/bin/**
+.config/sketchybar/helpers/menus/bin
+.config/sketchybar/helpers/menus/bin/**
+
 .config/yabai
 .config/yabai/**
 .config/skhd
