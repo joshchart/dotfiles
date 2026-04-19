@@ -12,6 +12,7 @@
 .config/svim
 .config/svim/**
 .yabairc
+.wezterm.lua
 
 .config/karabiner/assets/
 .config/karabiner/automatic_backups/
