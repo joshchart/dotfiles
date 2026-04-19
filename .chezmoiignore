@@ -1,4 +1,7 @@
 .config/nvim/.git
+.config/nvim/.jj
+.config/nvim/.jj/**
+.config/nvim/.pi/todos
 
 .config/tmux/plugins/
 
@@ -10,6 +13,8 @@
 .config/zsh/.zcompdump.dat
 .config/zsh/.zcompdump.zwc
 .config/zsh/.zsh_secrets
+.config/zsh/.zsh_sessions
+.config/zsh/.zsh_sessions/**
 
 .config/pi/agent/auth.json
 .config/pi/agent/sessions/**
