@@ -1,0 +1,205 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+chezsync - sync chezmoi source from the current live home directory
+
+Usage:
+  chezsync                # dry-run: show what would be synced
+  chezsync --apply        # sync all managed top-level targets
+  chezsync --apply ~/.config/nvim ~/.config/pi
+  chezsync --dry-run .config/sketchybar .config/tmux
+
+What it does:
+  1. forgets tracked paths that were deleted locally (DA in `chezmoi status`)
+  2. re-adds modified tracked files from the live target
+  3. adds each managed top-level target again to pick up new files
+
+Notes:
+  - With your chezmoi git auto-commit/auto-push settings, --apply will create
+    commits and push them automatically.
+  - Dry-run does not modify source or destination.
+EOF
+}
+
+mode="dry-run"
+declare -a requested_targets=()
+
+while (($#)); do
+  case "$1" in
+    --apply)
+      mode="apply"
+      ;;
+    -n|--dry-run|--plan)
+      mode="dry-run"
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --)
+      shift
+      while (($#)); do
+        requested_targets+=("$1")
+        shift
+      done
+      break
+      ;;
+    *)
+      requested_targets+=("$1")
+      ;;
+  esac
+  shift
+done
+
+debug() {
+  printf '%s\n' "$*"
+}
+
+normalize_target() {
+  local target="$1"
+  case "$target" in
+    ~)
+      target="$HOME"
+      ;;
+    ~/*)
+      target="$HOME/${target#~/}"
+      ;;
+    "$HOME"/*)
+      ;;
+    /*)
+      ;;
+    *)
+      target="$HOME/${target#./}"
+      ;;
+  esac
+  printf '%s\n' "$target"
+}
+
+managed_roots() {
+  chezmoi managed | awk '
+    {
+      path=$0
+      if (path ~ /^\.config\//) {
+        n=split(path, parts, "/")
+        if (n >= 3) {
+          print parts[1] "/" parts[2]
+        } else {
+          print path
+        }
+      } else {
+        n=split(path, parts, "/")
+        print parts[1]
+      }
+    }
+  ' | sort -u
+}
+
+path_is_under_requested_roots() {
+  local rel_path="$1"
+  shift
+  local root abs_root rel_root
+  for root in "$@"; do
+    abs_root="$(normalize_target "$root")"
+    rel_root="${abs_root#"$HOME"/}"
+    if [[ "$rel_path" == "$rel_root" || "$rel_path" == "$rel_root"/* ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+declare -a roots=()
+if ((${#requested_targets[@]})); then
+  for target in "${requested_targets[@]}"; do
+    roots+=("$(normalize_target "$target")")
+  done
+else
+  while IFS= read -r rel_root; do
+    [[ -n "$rel_root" ]] || continue
+    roots+=("$HOME/$rel_root")
+  done < <(managed_roots)
+fi
+
+if ((${#roots[@]} == 0)); then
+  echo "No managed targets found." >&2
+  exit 1
+fi
+
+# De-duplicate while preserving order.
+declare -A seen_roots=()
+declare -a unique_roots=()
+for root in "${roots[@]}"; do
+  if [[ -z "${seen_roots[$root]:-}" ]]; then
+    seen_roots[$root]=1
+    unique_roots+=("$root")
+  fi
+done
+roots=("${unique_roots[@]}")
+
+if [[ "$mode" == "dry-run" ]]; then
+  chezmoi_flags=(-n)
+else
+  chezmoi_flags=()
+fi
+
+debug "Mode: $mode"
+debug "Targets:"
+printf '  %s\n' "${roots[@]}"
+
+# Collect stale tracked files/directories that were removed locally.
+declare -a stale_rel_paths=()
+while IFS= read -r line; do
+  [[ -n "$line" ]] || continue
+  rel_path="${line#DA }"
+  if ((${#requested_targets[@]} == 0)) || path_is_under_requested_roots "$rel_path" "${roots[@]}"; then
+    stale_rel_paths+=("$rel_path")
+  fi
+done < <(chezmoi status 2>/dev/null | awk '$1 == "DA" { print $1 " " $2 }')
+
+declare -a stale_abs_paths=()
+for rel_path in "${stale_rel_paths[@]}"; do
+  stale_abs_paths+=("$HOME/$rel_path")
+done
+
+if ((${#stale_abs_paths[@]})); then
+  debug ""
+  debug "Forgetting stale tracked paths:"
+  printf '  %s\n' "${stale_abs_paths[@]}"
+  chezmoi forget "${chezmoi_flags[@]}" --force --no-tty "${stale_abs_paths[@]}"
+else
+  debug ""
+  debug "No stale tracked paths to forget."
+fi
+
+# Only sync roots that still exist locally.
+declare -a existing_roots=()
+for root in "${roots[@]}"; do
+  if [[ -e "$root" ]]; then
+    existing_roots+=("$root")
+  fi
+done
+
+if ((${#existing_roots[@]} == 0)); then
+  debug ""
+  debug "No existing targets left to sync after forgetting stale paths."
+  exit 0
+fi
+
+debug ""
+debug "Re-adding existing managed targets:"
+printf '  %s\n' "${existing_roots[@]}"
+chezmoi re-add "${chezmoi_flags[@]}" "${existing_roots[@]}"
+
+debug ""
+debug "Adding targets again to pick up new files:"
+printf '  %s\n' "${existing_roots[@]}"
+chezmoi add "${chezmoi_flags[@]}" "${existing_roots[@]}"
+
+debug ""
+if [[ "$mode" == "dry-run" ]]; then
+  debug "Dry-run complete."
+else
+  debug "Sync complete."
+fi
