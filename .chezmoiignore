@@ -1,7 +1,11 @@
 .config/nvim/.git
 .config/nvim/.jj
 .config/nvim/.jj/**
-.config/nvim/.pi/todos
+
+.config/.pi
+.config/.pi/**
+.config/**/.pi
+.config/**/.pi/**
 
 .config/tmux/plugins/
 
