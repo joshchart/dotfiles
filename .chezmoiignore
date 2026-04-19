@@ -30,3 +30,11 @@
 .config/pi/agent/bin/**
 .config/pi/history/**
 .config/pi/agent/git/**
+.config/pi/.pi
+.config/pi/.pi/**
+.config/pi/agent/.pi
+.config/pi/agent/.pi/**
+.config/pi/agent/.cache
+.config/pi/agent/.cache/**
+.config/pi/agent/node_modules
+.config/pi/agent/node_modules/**

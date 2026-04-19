@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@heyhuynhgiabuu/pi-diff": "^0.2.1",
+    "@heyhuynhgiabuu/pi-pretty": "^0.2.0"
+  }
+}
