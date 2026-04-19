@@ -22,10 +22,13 @@ cask "ghostty"                      # Terminal
 cask "helium-browser"               # Browser
 cask "karabiner-elements"           # Keyboard remapping
 cask "nikitabobko/tap/aerospace"    # Window management
+cask "shortcat"                     # Keyboard-driven UI navigation
 
 # Additional dependencies and tools
 brew "git"
-brew "ripgrep"  # Often used with Neovim
-brew "tree"     # Helpful for directory structure visualization
+brew "ripgrep"          # Often used with Neovim
+brew "fd"               # Neovim
+brew "tree-sitter-cli"  # Neovim
+brew "tree"             # Helpful for directory structure visualization
 brew "grep"
-brew "node"     # used for Pi
+brew "node"             # used for Pi
