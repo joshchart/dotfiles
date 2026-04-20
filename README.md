@@ -84,7 +84,6 @@ Some things still need to be done manually on a new machine.
 Examples:
 
 - `pi` and `/login` if needed
-- `gh auth login`
 - any cloud/provider logins
 - any app-specific sign-in flows
 
@@ -105,7 +104,6 @@ After bootstrap finishes, verify the key pieces:
 brew bundle check --file ~/.config/Brewfile || true
 command -v pi
 command -v sketchybar || true
-command -v gh || true
 ```
 
 You can also open a new shell and verify:
