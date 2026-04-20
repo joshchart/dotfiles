@@ -83,7 +83,9 @@ managed_roots() {
       path=$0
       n=split(path, parts, "/")
 
-      if ((parts[1] == ".config" || parts[1] == ".local") && n >= 2) {
+      if (parts[1] == ".local" && parts[2] == "bin" && n >= 3) {
+        root = path
+      } else if ((parts[1] == ".config" || parts[1] == ".local") && n >= 2) {
         root = parts[1] "/" parts[2]
       } else {
         root = parts[1]
