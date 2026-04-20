@@ -7,8 +7,9 @@ SETTINGS_PATH="$EXPECTED_DIR/settings.json"
 WORKSPACES_DIR="$HOME/workspaces"
 PI_DIFF_REVIEW_REPO_URL="https://github.com/joshchart/pi-diff-review.git"
 PI_DIFF_REVIEW_DIR="$WORKSPACES_DIR/pi-diff-review"
-PI_DIFF_REVIEW_ENTRY="$PI_DIFF_REVIEW_DIR/src/index.ts"
-LAST_CHANGELOG_VERSION="0.64.0"
+PI_DIFF_REVIEW_ENTRY="~/workspaces/pi-diff-review/src/index.ts"
+PI_DIFF_REVIEW_ENTRY_PATH="$PI_DIFF_REVIEW_DIR/src/index.ts"
+LAST_CHANGELOG_VERSION="0.67.68"
 
 # Verify we're in the right place
 if [ "$SCRIPT_DIR" != "$EXPECTED_DIR" ]; then
@@ -32,39 +33,29 @@ if [ ! -f "$SETTINGS_PATH" ]; then
   "defaultModel": "gpt-5.4",
   "defaultThinkingLevel": "high",
   "packages": [
-    {
-      "source": "git:github.com/HazAT/pi-interactive-subagents",
-      "extensions": [
-        "-pi-extension/session-artifacts/index.ts",
-        "-pi-extension/subagents/index.ts"
-      ]
-    },
     "npm:pi-vim",
     {
       "source": "npm:pi-provider-kiro",
       "extensions": [
-        "-dist/index.js"
+        "+dist/index.js"
       ]
     }
   ],
   "extensions": [
     "$PI_DIFF_REVIEW_ENTRY"
   ],
-  "hideThinkingBlock": true,
+  "hideThinkingBlock": false,
   "enabledModels": [
     "openai-codex/gpt-5.3-codex",
-    "openai-codex/gpt-5.4",
-    "anthropic/claude-haiku-4-5",
-    "anthropic/claude-opus-4-6",
-    "anthropic/claude-opus-4-5",
-    "anthropic/claude-sonnet-4-6"
+    "openai-codex/gpt-5.4"
   ],
   "theme": "tokyo-night",
-  "quietStartup": true
+  "quietStartup": true,
+  "enableInstallTelemetry": true
 }
 EOF
 else
-  echo "settings.json already exists — updating pi-diff-review path"
+  echo "settings.json already exists — syncing managed settings"
   export SETTINGS_PATH PI_DIFF_REVIEW_ENTRY LAST_CHANGELOG_VERSION
   python3 <<'PY'
 import json
@@ -81,40 +72,22 @@ data["lastChangelogVersion"] = last_changelog_version
 data["defaultProvider"] = "openai-codex"
 data["defaultModel"] = "gpt-5.4"
 data["defaultThinkingLevel"] = "high"
-data["hideThinkingBlock"] = True
+data["packages"] = [
+    "npm:pi-vim",
+    {
+        "source": "npm:pi-provider-kiro",
+        "extensions": ["+dist/index.js"],
+    },
+]
+data["extensions"] = [entry]
+data["hideThinkingBlock"] = False
 data["enabledModels"] = [
     "openai-codex/gpt-5.3-codex",
     "openai-codex/gpt-5.4",
-    "anthropic/claude-haiku-4-5",
-    "anthropic/claude-opus-4-6",
-    "anthropic/claude-opus-4-5",
-    "anthropic/claude-sonnet-4-6",
 ]
 data["theme"] = "tokyo-night"
 data["quietStartup"] = True
-
-extensions = data.get("extensions")
-if not isinstance(extensions, list):
-    extensions = []
-extensions = [
-    value for value in extensions
-    if not (isinstance(value, str) and value.endswith("/workspaces/pi-diff-review/src/index.ts"))
-]
-extensions.append(entry)
-data["extensions"] = extensions
-
-packages = data.get("packages")
-if isinstance(packages, list):
-    data["packages"] = [
-        value for value in packages
-        if not (
-            isinstance(value, str)
-            and (
-                value.endswith("/workspaces/pi-diff-review")
-                or value.endswith("/workspaces/pi-diff-review/src/index.ts")
-            )
-        )
-    ]
+data["enableInstallTelemetry"] = True
 
 settings_path.write_text(json.dumps(data, indent=2) + "\n")
 PY
@@ -123,7 +96,6 @@ fi
 
 # Install packages used by this config
 echo "Installing packages..."
-pi install git:github.com/HazAT/pi-interactive-subagents 2>/dev/null || echo "  pi-interactive-subagents already installed"
 pi install npm:pi-vim 2>/dev/null || echo "  pi-vim already installed"
 pi install npm:pi-provider-kiro 2>/dev/null || echo "  pi-provider-kiro already installed"
 echo ""
@@ -155,20 +127,14 @@ if [ -f "$PI_DIFF_REVIEW_DIR/package.json" ]; then
   echo ""
 fi
 
-echo "Extensions present in this config:"
+echo "Configured packages and extensions:"
 printf '  - %s\n' \
-  answer \
-  compact-header \
-  execute-command \
-  handoff \
-  parrot \
-  pi-diff-review \
-  review \
-  split-fork \
-  todos
+  npm:pi-vim \
+  'npm:pi-provider-kiro (+dist/index.js)' \
+  "$PI_DIFF_REVIEW_ENTRY"
 
 echo ""
 echo "✅ Setup complete!"
 echo ""
-echo "pi-diff-review path: $PI_DIFF_REVIEW_ENTRY"
+echo "pi-diff-review path: $PI_DIFF_REVIEW_ENTRY_PATH"
 echo "Restart pi or run /reload to pick up all changes."
