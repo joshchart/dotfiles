@@ -17,7 +17,7 @@ vim.g.have_nerd_font = true
 -- Enable break indent
 vim.opt.breakindent = true
 
--- Save undo history, even when a file is reloaded after an external edit.
+-- Save undo history, even when a file is reloaded after an external edit (AI).
 vim.opt.undofile = true
 vim.opt.undoreload = -1
 
