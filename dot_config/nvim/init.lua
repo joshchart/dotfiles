@@ -17,8 +17,9 @@ vim.g.have_nerd_font = true
 -- Enable break indent
 vim.opt.breakindent = true
 
--- Save undo history
+-- Save undo history, even when a file is reloaded after an external edit.
 vim.opt.undofile = true
+vim.opt.undoreload = -1
 
 -- Case-insensitive searching UNLESS \C or one or more capital letters in the search term
 vim.opt.ignorecase = true
