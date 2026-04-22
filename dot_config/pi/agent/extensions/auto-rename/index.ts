@@ -7,7 +7,7 @@
  */
 import { complete, type Api, type Model, type UserMessage } from "@mariozechner/pi-ai";
 import type { ExtensionAPI, ExtensionContext, ModelRegistry } from "@mariozechner/pi-coding-agent";
-import { syncCurrentTmuxPaneTitle } from "../lib/tmux-pane-title";
+import { syncSessionWindowTitle } from "../lib/tmux-pane-title";
 
 const CODEX_MODEL_ID = "gpt-5.1-codex-mini";
 const HAIKU_MODEL_ID = "claude-haiku-4-5";
@@ -15,19 +15,19 @@ const MAX_TITLE_LENGTH = 40;
 const MAX_SOURCE_TEXT_CHARS = 1200;
 const MAX_FALLBACK_WORDS = 4;
 
-const TITLE_SYSTEM_PROMPT = `You generate ultra-short conversation titles like ChatGPT.
+const TITLE_SYSTEM_PROMPT = `You generate short conversation titles like ChatGPT.
 
 Return only the title text.
 
 Rules:
 - Summarize the user's first message.
-- Prefer 2 to 4 words.
+- Prefer only a few words.
 - Use a compact noun phrase, not a sentence.
 - Drop filler words and hedging.
 - No quotes.
 - No markdown.
 - No trailing punctuation.
-- Keep it under 40 characters.
+- Keep it under 70 characters.
 - Make it specific and natural.`;
 
 const LEADING_FILLER_PATTERNS = [
@@ -71,7 +71,9 @@ const STOP_WORDS = new Set([
 	"you",
 ]);
 
-function hasUsableAuth(auth: Awaited<ReturnType<ModelRegistry["getApiKeyAndHeaders"]>>): boolean {
+function hasUsableAuth(
+	auth: Awaited<ReturnType<ModelRegistry["getApiKeyAndHeaders"]>>,
+): auth is Extract<Awaited<ReturnType<ModelRegistry["getApiKeyAndHeaders"]>>, { ok: true }> {
 	return auth.ok && (!!auth.apiKey || Object.keys(auth.headers ?? {}).length > 0);
 }
 
@@ -297,6 +299,6 @@ export default function (pi: ExtensionAPI) {
 		}
 
 		pi.setSessionName(nextTitle);
-		await syncCurrentTmuxPaneTitle(pi, nextTitle);
+		await syncSessionWindowTitle(pi, ctx, nextTitle);
 	});
 }

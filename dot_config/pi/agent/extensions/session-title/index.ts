@@ -1,5 +1,5 @@
 import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
-import { syncCurrentTmuxPaneTitle } from "../lib/tmux-pane-title";
+import { syncSessionWindowTitle } from "../lib/tmux-pane-title";
 
 async function syncTmuxPaneTitle(pi: ExtensionAPI, ctx: ExtensionContext): Promise<boolean> {
 	if (!ctx.hasUI) return false;
@@ -7,7 +7,7 @@ async function syncTmuxPaneTitle(pi: ExtensionAPI, ctx: ExtensionContext): Promi
 	const sessionName = pi.getSessionName()?.trim();
 	if (!sessionName) return false;
 
-	return await syncCurrentTmuxPaneTitle(pi, sessionName);
+	return await syncSessionWindowTitle(pi, ctx, sessionName);
 }
 
 export default function (pi: ExtensionAPI) {
