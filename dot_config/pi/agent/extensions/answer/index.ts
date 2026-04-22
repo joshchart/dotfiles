@@ -70,6 +70,16 @@ Example output:
 const CODEX_MODEL_ID = "gpt-5.1-codex-mini";
 const HAIKU_MODEL_ID = "claude-haiku-4-5";
 
+interface ExtractionUiResult {
+	status: "success" | "cancelled" | "error";
+	result?: ExtractionResult;
+	error?: string;
+}
+
+function hasUsableAuth(auth: Awaited<ReturnType<ModelRegistry["getApiKeyAndHeaders"]>>): boolean {
+	return auth.ok && (!!auth.apiKey || Object.keys(auth.headers ?? {}).length > 0);
+}
+
 /**
  * Prefer Codex mini for extraction when available, otherwise fallback to haiku or the current model.
  */
@@ -80,7 +90,7 @@ async function selectExtractionModel(
 	const codexModel = modelRegistry.find("openai-codex", CODEX_MODEL_ID);
 	if (codexModel) {
 		const auth = await modelRegistry.getApiKeyAndHeaders(codexModel);
-		if (auth.ok) {
+		if (hasUsableAuth(auth)) {
 			return codexModel;
 		}
 	}
@@ -91,35 +101,150 @@ async function selectExtractionModel(
 	}
 
 	const auth = await modelRegistry.getApiKeyAndHeaders(haikuModel);
-	if (!auth.ok) {
+	if (!hasUsableAuth(auth)) {
 		return currentModel;
 	}
 
 	return haikuModel;
 }
 
+function extractBalancedJsonObject(text: string): string | null {
+	let start = -1;
+	let depth = 0;
+	let inString = false;
+	let escaped = false;
+
+	for (let i = 0; i < text.length; i++) {
+		const char = text[i];
+
+		if (inString) {
+			if (escaped) {
+				escaped = false;
+				continue;
+			}
+			if (char === "\\") {
+				escaped = true;
+				continue;
+			}
+			if (char === '"') {
+				inString = false;
+			}
+			continue;
+		}
+
+		if (char === '"') {
+			inString = true;
+			continue;
+		}
+
+		if (char === "{") {
+			if (depth === 0) {
+				start = i;
+			}
+			depth++;
+			continue;
+		}
+
+		if (char === "}") {
+			if (depth === 0) continue;
+			depth--;
+			if (depth === 0 && start >= 0) {
+				return text.slice(start, i + 1);
+			}
+		}
+	}
+
+	return null;
+}
+
+function normalizeExtractionResult(value: unknown): ExtractionResult | null {
+	if (!value || typeof value !== "object") {
+		return null;
+	}
+
+	const questions = (value as { questions?: unknown }).questions;
+	if (!Array.isArray(questions)) {
+		return null;
+	}
+
+	const normalizedQuestions = questions
+		.map((entry): ExtractedQuestion | null => {
+			if (typeof entry === "string") {
+				const question = entry.trim();
+				return question ? { question } : null;
+			}
+			if (!entry || typeof entry !== "object") {
+				return null;
+			}
+			const question = typeof (entry as { question?: unknown }).question === "string"
+				? (entry as { question: string }).question.trim()
+				: "";
+			if (!question) {
+				return null;
+			}
+			const context = typeof (entry as { context?: unknown }).context === "string"
+				? (entry as { context: string }).context.trim()
+				: undefined;
+			return context ? { question, context } : { question };
+		})
+		.filter((entry): entry is ExtractedQuestion => entry !== null);
+
+	return { questions: normalizedQuestions };
+}
+
+function parseQuestionsFromText(text: string): ExtractionResult | null {
+	const matches = Array.from(text.matchAll(/(?:^|\n)\s*(?:[-*]\s*|\d+[.)]\s*)?(?:Q:\s*)?([^\n?]+\?)/g));
+	if (matches.length === 0) {
+		return null;
+	}
+
+	const seen = new Set<string>();
+	const questions = matches
+		.map((match) => match[1]?.replace(/\s+/g, " ").trim())
+		.filter((question): question is string => !!question)
+		.filter((question) => {
+			if (seen.has(question)) return false;
+			seen.add(question);
+			return true;
+		})
+		.map((question) => ({ question }));
+
+	return questions.length > 0 ? { questions } : null;
+}
+
 /**
  * Parse the JSON response from the LLM
  */
 function parseExtractionResult(text: string): ExtractionResult | null {
-	try {
-		// Try to find JSON in the response (it might be wrapped in markdown code blocks)
-		let jsonStr = text;
-
-		// Remove markdown code block if present
-		const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-		if (jsonMatch) {
-			jsonStr = jsonMatch[1].trim();
-		}
-
-		const parsed = JSON.parse(jsonStr);
-		if (parsed && Array.isArray(parsed.questions)) {
-			return parsed as ExtractionResult;
-		}
-		return null;
-	} catch {
-		return null;
+	const candidates: string[] = [];
+	const trimmed = text.trim();
+	if (trimmed) {
+		candidates.push(trimmed);
 	}
+
+	const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+	if (jsonMatch?.[1]) {
+		candidates.unshift(jsonMatch[1].trim());
+	}
+
+	const balancedJson = extractBalancedJsonObject(text);
+	if (balancedJson) {
+		candidates.push(balancedJson);
+	}
+
+	for (const candidate of candidates) {
+		try {
+			const parsed = JSON.parse(candidate);
+			const normalized = normalizeExtractionResult(parsed);
+			if (normalized) {
+				return normalized;
+			}
+		} catch {
+			// Try next candidate
+		}
+	}
+
+	return parseQuestionsFromText(text);
 }
 
 /**
@@ -160,9 +285,11 @@ class QnAComponent implements Component {
 		const editorTheme: EditorTheme = {
 			borderColor: this.dim,
 			selectList: {
-				selectedBg: (s: string) => `\x1b[44m${s}\x1b[0m`,
-				matchHighlight: this.cyan,
-				itemSecondary: this.gray,
+				selectedPrefix: this.cyan,
+				selectedText: this.cyan,
+				description: this.gray,
+				scrollInfo: this.dim,
+				noMatch: this.yellow,
 			},
 		};
 
@@ -445,18 +572,36 @@ export default function (pi: ExtensionAPI) {
 				return;
 			}
 
+			const directExtraction = parseQuestionsFromText(lastAssistantText);
+			if (directExtraction && directExtraction.questions.length > 0) {
+				const answersResult = await ctx.ui.custom<string | null>((tui, _theme, _kb, done) => {
+					return new QnAComponent(directExtraction.questions, tui, done);
+				});
+
+				if (answersResult === null) {
+					ctx.ui.notify("Cancelled", "info");
+					return;
+				}
+
+				pi.sendUserMessage("I answered your questions in the following way:\n\n" + answersResult);
+				return;
+			}
+
 			// Select the best model for extraction (prefer Codex mini, then haiku)
 			const extractionModel = await selectExtractionModel(ctx.model, ctx.modelRegistry);
 
 			// Run extraction with loader UI
-			const extractionResult = await ctx.ui.custom<ExtractionResult | null>((tui, theme, _kb, done) => {
+			const extraction = await ctx.ui.custom<ExtractionUiResult>((tui, theme, _kb, done) => {
 				const loader = new BorderedLoader(tui, theme, `Extracting questions using ${extractionModel.id}...`);
-				loader.onAbort = () => done(null);
+				loader.onAbort = () => done({ status: "cancelled" });
 
 				const doExtract = async () => {
 					const auth = await ctx.modelRegistry.getApiKeyAndHeaders(extractionModel);
-					if (!auth.ok) {
+					if ("error" in auth) {
 						throw new Error(auth.error);
+					}
+					if (!hasUsableAuth(auth)) {
+						throw new Error(`No usable auth configured for ${extractionModel.provider}/${extractionModel.id}`);
 					}
 					const userMessage: UserMessage = {
 						role: "user",
@@ -471,7 +616,7 @@ export default function (pi: ExtensionAPI) {
 					);
 
 					if (response.stopReason === "aborted") {
-						return null;
+						return { status: "cancelled" } as ExtractionUiResult;
 					}
 
 					const responseText = response.content
@@ -479,22 +624,36 @@ export default function (pi: ExtensionAPI) {
 						.map((c) => c.text)
 						.join("\n");
 
-					return parseExtractionResult(responseText);
+					const result = parseExtractionResult(responseText) ?? parseQuestionsFromText(lastAssistantText!);
+					if (!result) {
+						throw new Error(`Could not parse extraction result from ${extractionModel.id}`);
+					}
+
+					return { status: "success", result } as ExtractionUiResult;
 				};
 
 				doExtract()
 					.then(done)
-					.catch(() => done(null));
+					.catch((error) => {
+						const message = error instanceof Error ? error.message : String(error);
+						done({ status: "error", error: message });
+					});
 
 				return loader;
 			});
 
-			if (extractionResult === null) {
+			if (extraction.status === "cancelled") {
 				ctx.ui.notify("Cancelled", "info");
 				return;
 			}
 
-			if (extractionResult.questions.length === 0) {
+			if (extraction.status === "error") {
+				ctx.ui.notify(`Question extraction failed: ${extraction.error}`, "error");
+				return;
+			}
+
+			const extractionResult = extraction.result;
+			if (!extractionResult || extractionResult.questions.length === 0) {
 				ctx.ui.notify("No questions found in the last message", "info");
 				return;
 			}
@@ -509,15 +668,8 @@ export default function (pi: ExtensionAPI) {
 				return;
 			}
 
-			// Send the answers directly as a message and trigger a turn
-			pi.sendMessage(
-				{
-					customType: "answers",
-					content: "I answered your questions in the following way:\n\n" + answersResult,
-					display: true,
-				},
-				{ triggerTurn: true },
-			);
+			// Send the answers back as a user message and trigger a turn
+			pi.sendUserMessage("I answered your questions in the following way:\n\n" + answersResult);
 	};
 
 	pi.registerCommand("answer", {
