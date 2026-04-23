@@ -6,10 +6,9 @@ state_option='@pi_agent_state'
 completion_option='@pi_agent_completion_id'
 seen_completion_option='@pi_agent_seen_completion_id'
 last_visited_option='@pi_agent_last_visited'
+last_visited_tick_option='@pi_agent_last_visited_tick'
 visible_panes_cache=''
-declare -A visible_panes_map=()
 pi_tty_cache=''
-declare -A pi_tty_map=()
 pi_tty_cache_loaded=0
 popup_width_cache=''
 color_status_mode=${AGENT_SESSIONIZER_COLOR:-0}
@@ -80,19 +79,10 @@ current_client_panes() {
 }
 
 refresh_visible_panes_cache() {
-  local pane_id
-
   visible_panes_cache=$(current_client_panes || true)
-  visible_panes_map=()
-  while IFS= read -r pane_id; do
-    [[ -n $pane_id ]] || continue
-    visible_panes_map["$pane_id"]=1
-  done <<< "$visible_panes_cache"
 }
 
 refresh_pi_tty_cache() {
-  local short_tty
-
   pi_tty_cache=$(ps -Ao tty=,args= | awk '
     {
       tty = $1
@@ -103,11 +93,6 @@ refresh_pi_tty_cache() {
       }
     }
   ' | sort -u)
-  pi_tty_map=()
-  while IFS= read -r short_tty; do
-    [[ -n $short_tty ]] || continue
-    pi_tty_map["$short_tty"]=1
-  done <<< "$pi_tty_cache"
   pi_tty_cache_loaded=1
 }
 
@@ -118,13 +103,30 @@ ensure_pi_tty_cache() {
 tty_has_pi() {
   local short_tty=$1
 
-  [[ -n ${pi_tty_map["$short_tty"]+x} ]]
+  [[ -n $pi_tty_cache ]] && grep -Fxq "$short_tty" <<< "$pi_tty_cache"
 }
 
 pane_is_visible() {
   local pane_id=$1
 
-  [[ -n ${visible_panes_map["$pane_id"]+x} ]]
+  [[ -n $visible_panes_cache ]] && grep -Fxq "$pane_id" <<< "$visible_panes_cache"
+}
+
+current_visit_tick() {
+  local now previous
+
+  now=$(date +%s)
+  if [[ -z ${now:-} || ! $now =~ ^[0-9]+$ ]]; then
+    now=0
+  fi
+
+  previous=$(tmux show-options -g -v "$last_visited_tick_option" 2>/dev/null || true)
+  if [[ $previous =~ ^[0-9]+$ ]] && (( now <= previous )); then
+    now=$(( previous + 1 ))
+  fi
+
+  tmux set-option -gq "$last_visited_tick_option" "$now" >/dev/null 2>&1 || true
+  printf '%s' "$now"
 }
 
 mark_pane_seen() {
@@ -135,7 +137,7 @@ mark_pane_seen() {
     return 0
   fi
 
-  now=$(date +%s)
+  now=$(current_visit_tick)
   set_tmux_pane_option "$pane_id" "$last_visited_option" "$now"
 
   completion_id=$(tmux_pane_option "$pane_id" "$completion_option")
@@ -439,7 +441,6 @@ jump_to_selection() {
   tmux switch-client -t "$session_name"
   tmux select-window -t "${session_name}:${window_index}"
   tmux select-pane -t "$pane_id"
-  mark_pane_seen "$pane_id"
 }
 
 run_picker() {
@@ -462,7 +463,7 @@ run_picker() {
       --with-nth=8,9,10 \
       --nth=1,3 \
       --preview "$preview_cmd" \
-      --preview-window='right,45%,wrap,+{11}-27' \
+      --preview-window='right,45%,wrap,+{11}-25' \
       --prompt='Pi > ' \
       --header=$'session:window.pane   status    title' \
       --bind='esc:abort') || true
