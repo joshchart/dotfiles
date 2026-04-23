@@ -3,6 +3,8 @@ font-size = 18
 window-save-state = always
 window-colorspace = "display-p3"
 
+macos-titlebar-style = hidden
+
 # Send Ctrl+number to tmux as CSI-u extended keys (for ctrl+num tmux)
 keybind = ctrl+one=csi:49;5u
 keybind = ctrl+two=csi:50;5u
