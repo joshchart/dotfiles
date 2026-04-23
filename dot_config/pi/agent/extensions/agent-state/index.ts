@@ -1,12 +1,15 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 
 type RawState = "working" | "blocked" | "idle" | "unknown";
+type InputSource = "interactive" | "rpc" | "extension";
 
 const AGENT_OPTION = "@pi_agent";
 const STATE_OPTION = "@pi_agent_state";
 const COMPLETION_OPTION = "@pi_agent_completion_id";
 const SEEN_COMPLETION_OPTION = "@pi_agent_seen_completion_id";
 const LAST_UPDATE_OPTION = "@pi_agent_last_update";
+
+const INPUT_ASSOCIATION_WINDOW_MS = 5_000;
 
 const BLOCKED_PATTERNS = [
 	/\bdo you want me\b/i,
@@ -112,6 +115,10 @@ function classifyRawState(messages: Iterable<unknown>): RawState {
 	return looksBlocked(lastAssistantText) ? "blocked" : "idle";
 }
 
+function isUserInitiatedInput(source: InputSource | null): boolean {
+	return source === "interactive" || source === "rpc";
+}
+
 async function initializeCurrentPaneState(pi: ExtensionAPI): Promise<void> {
 	const paneId = getCurrentPaneId();
 	if (!paneId || !process.env.TMUX) {
@@ -164,22 +171,43 @@ async function clearCurrentPaneState(pi: ExtensionAPI): Promise<void> {
 }
 
 export default function (pi: ExtensionAPI) {
+	let pendingInputSource: InputSource | null = null;
+	let pendingInputAt = 0;
+	let activeRunHasUserInput = false;
+
 	void initializeCurrentPaneState(pi);
 
 	pi.on("session_start", async (_event, _ctx) => {
+		pendingInputSource = null;
+		pendingInputAt = 0;
+		activeRunHasUserInput = false;
 		await updatePaneState(pi, "idle", false);
 	});
 
+	pi.on("input", async (event, _ctx) => {
+		pendingInputSource = event.source;
+		pendingInputAt = Date.now();
+	});
+
 	pi.on("agent_start", async (_event, _ctx) => {
+		activeRunHasUserInput =
+			isUserInitiatedInput(pendingInputSource) && Date.now() - pendingInputAt <= INPUT_ASSOCIATION_WINDOW_MS;
+		pendingInputSource = null;
+		pendingInputAt = 0;
 		await updatePaneState(pi, "working", false);
 	});
 
 	pi.on("agent_end", async (event, _ctx) => {
 		const rawState = classifyRawState(event.messages);
-		await updatePaneState(pi, rawState, rawState === "idle");
+		const shouldRecordCompletion = activeRunHasUserInput && rawState === "idle";
+		activeRunHasUserInput = false;
+		await updatePaneState(pi, rawState, shouldRecordCompletion);
 	});
 
 	pi.on("session_shutdown", async (_event, _ctx) => {
+		pendingInputSource = null;
+		pendingInputAt = 0;
+		activeRunHasUserInput = false;
 		await clearCurrentPaneState(pi);
 	});
 }
