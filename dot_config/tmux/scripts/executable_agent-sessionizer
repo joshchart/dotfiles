@@ -9,6 +9,7 @@ last_visited_option='@pi_agent_last_visited'
 visible_panes_cache=''
 pi_tty_cache=''
 pi_tty_cache_loaded=0
+popup_width_cache=''
 color_status_mode=${AGENT_SESSIONIZER_COLOR:-0}
 
 trim() {
@@ -21,6 +22,11 @@ trim() {
 popup_width() {
   local width
 
+  if [[ -n $popup_width_cache ]]; then
+    printf '%s' "$popup_width_cache"
+    return
+  fi
+
   width=$(tmux display-message -p '#{popup_width}' 2>/dev/null || true)
   if [[ -z $width || ! $width =~ ^[0-9]+$ ]]; then
     width=$(tmux display-message -p '#{client_width}' 2>/dev/null || true)
@@ -32,6 +38,7 @@ popup_width() {
     width=${COLUMNS:-80}
   fi
 
+  popup_width_cache=$width
   printf '%s' "$width"
 }
 
