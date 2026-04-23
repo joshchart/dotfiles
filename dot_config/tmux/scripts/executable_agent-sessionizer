@@ -434,13 +434,21 @@ show_empty_state() {
 
 jump_to_selection() {
   local selection=$1
-  local pane_id session_name window_index
+  local pane_id session_name window_index current_session self_quoted pane_quoted
 
   IFS=$'\t' read -r _ _ _ pane_id session_name window_index _ _ _ _ <<< "$selection"
 
-  tmux switch-client -t "$session_name"
+  current_session=$(tmux display-message -p '#{session_name}' 2>/dev/null || true)
+  if [[ $current_session != "$session_name" ]]; then
+    tmux switch-client -t "$session_name"
+  fi
+
   tmux select-window -t "${session_name}:${window_index}"
   tmux select-pane -t "$pane_id"
+
+  self_quoted=$(printf '%q' "$self_path")
+  pane_quoted=$(printf '%q' "$pane_id")
+  tmux run-shell -b "${self_quoted} --mark-seen ${pane_quoted}" >/dev/null 2>&1 || true
 }
 
 run_picker() {
@@ -482,11 +490,14 @@ case "${1:-}" in
   --mark-seen-current)
     mark_visible_panes_seen
     ;;
+  --mark-seen)
+    mark_pane_seen "$2"
+    ;;
   '')
     run_picker
     ;;
   *)
-    printf 'Usage: %s [--list | --preview <pane-id> | --mark-seen-current]\n' "$0" >&2
+    printf 'Usage: %s [--list | --preview <pane-id> | --mark-seen-current | --mark-seen <pane-id>]\n' "$0" >&2
     exit 1
     ;;
 esac
