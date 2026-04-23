@@ -75,7 +75,12 @@ preview_line_count() {
 }
 
 current_client_panes() {
-  tmux list-clients -F '#{pane_id}' 2>/dev/null | awk 'NF' | sort -u
+  local window_id
+
+  tmux list-clients -F '#{window_id}' 2>/dev/null | awk 'NF' | sort -u | while IFS= read -r window_id; do
+    [[ -n $window_id ]] || continue
+    tmux list-panes -t "$window_id" -F '#{pane_id}' 2>/dev/null || true
+  done | awk 'NF' | sort -u
 }
 
 refresh_visible_panes_cache() {
@@ -356,11 +361,13 @@ preview_pane() {
 }
 
 list_pi_panes() {
-  local short_tty pane_title location content preview_lines agent_marker metadata_state completion_id seen_completion_id last_visited state status_and_title max_location_width display_location display_status display_title
+  local short_tty pane_title location content preview_lines agent_marker metadata_state completion_id seen_completion_id last_visited state status_and_title max_location_width display_location display_status display_title current_pane is_current
   local row
   local -a rows=()
 
   max_location_width=0
+  refresh_visible_panes_cache
+  current_pane=$(tmux display-message -p '#{pane_id}' 2>/dev/null || true)
 
   while IFS=$'\t' read -r session_name window_index pane_index pane_id pane_tty pane_command window_activity pane_active pane_last pane_title agent_marker metadata_state completion_id seen_completion_id last_visited; do
     [[ $pane_command == node ]] || continue
@@ -389,7 +396,12 @@ list_pi_panes() {
 
     state=$(effective_state_for_pane "$pane_id" "$metadata_state" "$completion_id" "$seen_completion_id" "$content")
     preview_lines=$(preview_line_count "$pane_id")
-    rows+=("${last_visited:-0}"$'\t'"${window_activity:-0}"$'\t'"${pane_active:-0}"$'\t'"${pane_last:-0}"$'\t'"$pane_id"$'\t'"$session_name"$'\t'"$window_index"$'\t'"$pane_index"$'\t'"$location"$'\t'"$state"$'\t'"$pane_title"$'\t'"${preview_lines:-0}")
+    if [[ $pane_id == "$current_pane" ]]; then
+      is_current=1
+    else
+      is_current=0
+    fi
+    rows+=("${is_current:-0}"$'\t'"${last_visited:-0}"$'\t'"${window_activity:-0}"$'\t'"${pane_active:-0}"$'\t'"${pane_last:-0}"$'\t'"$pane_id"$'\t'"$session_name"$'\t'"$window_index"$'\t'"$pane_index"$'\t'"$location"$'\t'"$state"$'\t'"$pane_title"$'\t'"${preview_lines:-0}")
   done < <(
     tmux list-panes -a -F '#{session_name}	#{window_index}	#{pane_index}	#{pane_id}	#{pane_tty}	#{pane_current_command}	#{window_activity}	#{pane_active}	#{pane_last}	#{pane_title}	#{@pi_agent}	#{@pi_agent_state}	#{@pi_agent_completion_id}	#{@pi_agent_seen_completion_id}	#{@pi_agent_last_visited}'
   )
@@ -397,7 +409,7 @@ list_pi_panes() {
   (( ${#rows[@]} == 0 )) && return 0
 
   while IFS= read -r row; do
-    IFS=$'\t' read -r last_visited window_activity pane_active pane_last pane_id session_name window_index pane_index location state pane_title preview_lines <<< "$row"
+    IFS=$'\t' read -r is_current last_visited window_activity pane_active pane_last pane_id session_name window_index pane_index location state pane_title preview_lines <<< "$row"
     status_and_title=$(format_status_and_title "$location" "$state" "$pane_title" "$max_location_width")
     IFS=$'\t' read -r display_location display_status display_title <<< "$status_and_title"
 
@@ -414,7 +426,7 @@ list_pi_panes() {
       "$display_title" \
       "$preview_lines"
   done < <(
-    printf '%s\n' "${rows[@]}" | sort -t $'\t' -k1,1nr -k2,2nr -k3,3nr -k4,4nr -k6,6 -k7,7nr -k8,8nr
+    printf '%s\n' "${rows[@]}" | sort -t $'\t' -k1,1n -k2,2nr -k3,3nr -k4,4nr -k5,5nr -k7,7 -k8,8nr -k9,9nr
   )
 }
 
@@ -434,7 +446,7 @@ show_empty_state() {
 
 jump_to_selection() {
   local selection=$1
-  local pane_id session_name window_index current_session self_quoted pane_quoted
+  local pane_id session_name window_index current_session current_window current_pane self_quoted pane_quoted
 
   IFS=$'\t' read -r _ _ _ pane_id session_name window_index _ _ _ _ <<< "$selection"
 
@@ -443,8 +455,15 @@ jump_to_selection() {
     tmux switch-client -t "$session_name"
   fi
 
-  tmux select-window -t "${session_name}:${window_index}"
-  tmux select-pane -t "$pane_id"
+  current_window=$(tmux display-message -p '#{window_index}' 2>/dev/null || true)
+  if [[ $current_window != "$window_index" ]]; then
+    tmux select-window -t "${session_name}:${window_index}"
+  fi
+
+  current_pane=$(tmux display-message -p '#{pane_id}' 2>/dev/null || true)
+  if [[ $current_pane != "$pane_id" ]]; then
+    tmux select-pane -t "$pane_id"
+  fi
 
   self_quoted=$(printf '%q' "$self_path")
   pane_quoted=$(printf '%q' "$pane_id")
@@ -474,6 +493,7 @@ run_picker() {
       --preview-window='right,45%,wrap,+{11}-25' \
       --prompt='Pi > ' \
       --header=$'session:window.pane   status    title' \
+      --cycle \
       --bind='esc:abort') || true
 
   [[ -n $selection ]] || exit 0
