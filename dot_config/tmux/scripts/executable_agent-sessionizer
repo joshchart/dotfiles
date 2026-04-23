@@ -7,7 +7,9 @@ completion_option='@pi_agent_completion_id'
 seen_completion_option='@pi_agent_seen_completion_id'
 last_visited_option='@pi_agent_last_visited'
 visible_panes_cache=''
+declare -A visible_panes_map=()
 pi_tty_cache=''
+declare -A pi_tty_map=()
 pi_tty_cache_loaded=0
 popup_width_cache=''
 color_status_mode=${AGENT_SESSIONIZER_COLOR:-0}
@@ -72,10 +74,19 @@ current_client_panes() {
 }
 
 refresh_visible_panes_cache() {
+  local pane_id
+
   visible_panes_cache=$(current_client_panes || true)
+  visible_panes_map=()
+  while IFS= read -r pane_id; do
+    [[ -n $pane_id ]] || continue
+    visible_panes_map["$pane_id"]=1
+  done <<< "$visible_panes_cache"
 }
 
 refresh_pi_tty_cache() {
+  local short_tty
+
   pi_tty_cache=$(ps -Ao tty=,args= | awk '
     {
       tty = $1
@@ -86,6 +97,11 @@ refresh_pi_tty_cache() {
       }
     }
   ' | sort -u)
+  pi_tty_map=()
+  while IFS= read -r short_tty; do
+    [[ -n $short_tty ]] || continue
+    pi_tty_map["$short_tty"]=1
+  done <<< "$pi_tty_cache"
   pi_tty_cache_loaded=1
 }
 
@@ -96,13 +112,13 @@ ensure_pi_tty_cache() {
 tty_has_pi() {
   local short_tty=$1
 
-  [[ -n $pi_tty_cache ]] && grep -Fxq "$short_tty" <<< "$pi_tty_cache"
+  [[ -n ${pi_tty_map["$short_tty"]+x} ]]
 }
 
 pane_is_visible() {
   local pane_id=$1
 
-  [[ -n $visible_panes_cache ]] && grep -Fxq "$pane_id" <<< "$visible_panes_cache"
+  [[ -n ${visible_panes_map["$pane_id"]+x} ]]
 }
 
 mark_pane_seen() {
@@ -336,7 +352,6 @@ list_pi_panes() {
   local row
   local -a rows=()
 
-  mark_visible_panes_seen
   max_location_width=0
 
   while IFS=$'\t' read -r session_name window_index pane_index pane_id pane_tty pane_command window_activity pane_active pane_last pane_title agent_marker metadata_state completion_id seen_completion_id last_visited; do
