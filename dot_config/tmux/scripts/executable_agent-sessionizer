@@ -75,9 +75,17 @@ preview_line_count() {
 }
 
 current_client_panes() {
-  local window_id
+  local window_id context_pane context_window_id
 
-  tmux list-clients -F '#{window_id}' 2>/dev/null | awk 'NF' | sort -u | while IFS= read -r window_id; do
+  {
+    tmux list-clients -F '#{window_id}' 2>/dev/null || true
+
+    context_pane=${TMUX_PANE-}
+    if [[ -n $context_pane ]]; then
+      context_window_id=$(tmux display-message -p -t "$context_pane" '#{window_id}' 2>/dev/null || true)
+      [[ -n $context_window_id ]] && printf '%s\n' "$context_window_id"
+    fi
+  } | awk 'NF' | sort -u | while IFS= read -r window_id; do
     [[ -n $window_id ]] || continue
     tmux list-panes -t "$window_id" -F '#{pane_id}' 2>/dev/null || true
   done | awk 'NF' | sort -u
@@ -158,6 +166,16 @@ mark_visible_panes_seen() {
     [[ -n $pane_id ]] || continue
     mark_pane_seen "$pane_id"
   done <<< "$visible_panes_cache"
+}
+
+sync_visible_completion_seen() {
+  local pane_id=$1
+  local completion_id=$2
+  local seen_completion_id=$3
+
+  if [[ -n $completion_id && $completion_id != "$seen_completion_id" ]] && pane_is_visible "$pane_id"; then
+    set_tmux_pane_option "$pane_id" "$seen_completion_option" "$completion_id"
+  fi
 }
 
 normalize_meaningful_tail() {
@@ -392,6 +410,11 @@ list_pi_panes() {
     content=''
     if [[ ! $metadata_state =~ ^(working|blocked|idle|unknown)$ ]]; then
       content=$(capture_plain_pane "$pane_id")
+    fi
+
+    sync_visible_completion_seen "$pane_id" "$completion_id" "$seen_completion_id"
+    if [[ -n $completion_id ]] && pane_is_visible "$pane_id"; then
+      seen_completion_id=$completion_id
     fi
 
     state=$(effective_state_for_pane "$pane_id" "$metadata_state" "$completion_id" "$seen_completion_id" "$content")
