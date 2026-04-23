@@ -2,8 +2,9 @@
  * Auto Session Name Extension
  *
  * Names the session once, after the first completed agent run.
- * It summarizes the first user message into a compact ChatGPT-style title.
- * If model-based generation is unavailable, it falls back to a short keyword title.
+ * The title generation logic is intentionally kept close to Claude's shared
+ * session-title utility: pass in a trimmed description, ask for a structured
+ * JSON title, parse it, and return null on failure.
  */
 import { complete, type Api, type Model, type UserMessage } from "@mariozechner/pi-ai";
 import type { ExtensionAPI, ExtensionContext, ModelRegistry } from "@mariozechner/pi-coding-agent";
@@ -11,65 +12,30 @@ import { syncSessionWindowTitle } from "../lib/tmux-pane-title";
 
 const CODEX_MODEL_ID = "gpt-5.1-codex-mini";
 const HAIKU_MODEL_ID = "claude-haiku-4-5";
-const MAX_TITLE_LENGTH = 40;
-const MAX_SOURCE_TEXT_CHARS = 1200;
-const MAX_FALLBACK_WORDS = 4;
+const MAX_DESCRIPTION_TEXT = 1000;
 
-const TITLE_SYSTEM_PROMPT = `You generate short conversation titles like ChatGPT.
+const SESSION_TITLE_PROMPT = `Generate a concise, sentence-case title (3-7 words) that captures the main topic or goal of this coding session. The title should be clear enough that the user recognizes the session in a list. Use sentence case: capitalize only the first word and proper nouns.
 
-Return only the title text.
+Return JSON with a single "title" field.
 
-Rules:
-- Summarize the user's first message.
-- Prefer only a few words.
-- Use a compact noun phrase, not a sentence.
-- Drop filler words and hedging.
-- No quotes.
-- No markdown.
-- No trailing punctuation.
-- Keep it under 70 characters.
-- Make it specific and natural.`;
+Good examples:
+{"title": "Fix login button on mobile"}
+{"title": "Add OAuth authentication"}
+{"title": "Debug failing CI tests"}
+{"title": "Refactor API client error handling"}
 
-const LEADING_FILLER_PATTERNS = [
-	/^(?:please\s+)+/i,
-	/^(?:can|could|would|will)\s+you\s+/i,
-	/^help\s+me\s+(?:with\s+)?/i,
-	/^i\s+(?:need|want|would\s+like)\s+to\s+/i,
-	/^i['’]m\s+trying\s+to\s+/i,
-	/^this\s+is\s+/i,
-];
+Bad (too vague): {"title": "Code changes"}
+Bad (too long): {"title": "Investigate and fix the issue where the login button does not respond on mobile devices"}
+Bad (wrong case): {"title": "Fix Login Button On Mobile"}`;
 
-const STOP_WORDS = new Set([
-	"a",
-	"an",
-	"and",
-	"at",
-	"by",
-	"for",
-	"from",
-	"help",
-	"how",
-	"i",
-	"if",
-	"in",
-	"into",
-	"is",
-	"it",
-	"me",
-	"my",
-	"of",
-	"on",
-	"or",
-	"please",
-	"so",
-	"that",
-	"the",
-	"this",
-	"to",
-	"we",
-	"with",
-	"you",
-]);
+const TITLE_JSON_SCHEMA = {
+	type: "object",
+	properties: {
+		title: { type: "string" },
+	},
+	required: ["title"],
+	additionalProperties: false,
+} as const;
 
 function hasUsableAuth(
 	auth: Awaited<ReturnType<ModelRegistry["getApiKeyAndHeaders"]>>,
@@ -81,11 +47,10 @@ async function selectTitleModel(
 	currentModel: Model<Api> | undefined,
 	modelRegistry: ModelRegistry,
 ): Promise<Model<Api> | undefined> {
-	const codexModel = modelRegistry.find("openai-codex", CODEX_MODEL_ID);
-	if (codexModel) {
-		const auth = await modelRegistry.getApiKeyAndHeaders(codexModel);
+	if (currentModel) {
+		const auth = await modelRegistry.getApiKeyAndHeaders(currentModel);
 		if (hasUsableAuth(auth)) {
-			return codexModel;
+			return currentModel;
 		}
 	}
 
@@ -97,12 +62,15 @@ async function selectTitleModel(
 		}
 	}
 
-	if (!currentModel) {
-		return undefined;
+	const codexModel = modelRegistry.find("openai-codex", CODEX_MODEL_ID);
+	if (codexModel) {
+		const auth = await modelRegistry.getApiKeyAndHeaders(codexModel);
+		if (hasUsableAuth(auth)) {
+			return codexModel;
+		}
 	}
 
-	const auth = await modelRegistry.getApiKeyAndHeaders(currentModel);
-	return hasUsableAuth(auth) ? currentModel : undefined;
+	return undefined;
 }
 
 function getTextContent(content: unknown): string {
@@ -120,15 +88,13 @@ function getTextContent(content: unknown): string {
 		.join("\n");
 }
 
-function trimSourceText(text: string, maxChars: number): string {
-	const normalized = text.replace(/\s+/g, " ").trim();
-	if (normalized.length <= maxChars) {
+function trimDescription(description: string): string {
+	const normalized = description.replace(/\s+/g, " ").trim();
+	if (normalized.length <= MAX_DESCRIPTION_TEXT) {
 		return normalized;
 	}
 
-	const cutoff = normalized.lastIndexOf(" ", maxChars - 1);
-	const end = cutoff > Math.floor(maxChars * 0.6) ? cutoff : maxChars - 1;
-	return `${normalized.slice(0, end).trim()}…`;
+	return normalized.slice(-MAX_DESCRIPTION_TEXT);
 }
 
 function countUserMessages(ctx: ExtensionContext): number {
@@ -170,109 +136,135 @@ function getFirstUserMessageText(ctx: ExtensionContext): string | null {
 	return null;
 }
 
-function sanitizeTitle(text: string): string {
-	let title = text.trim();
-	if (!title) {
-		return "";
+function buildStructuredOutputPayload(payload: unknown, model: Model<Api>): unknown {
+	if (!payload || typeof payload !== "object") {
+		return payload;
 	}
 
-	title = title.replace(/^\s*title\s*:\s*/i, "");
-	title = title.split(/\r?\n/).map((line) => line.trim()).find(Boolean) ?? "";
-	title = title.replace(/^[-*]\s*/, "");
-	title = title.replace(/^['"`]+|['"`]+$/g, "");
-	title = title.replace(/\s+/g, " ").trim();
-	title = title.replace(/[.!?,;:]+$/g, "").trim();
-
-	if (title.length > MAX_TITLE_LENGTH) {
-		title = title.slice(0, MAX_TITLE_LENGTH).trim();
+	if (model.api === "openai-responses" || model.api === "openai-codex-responses" || model.api === "azure-openai-responses") {
+		const body = payload as Record<string, unknown>;
+		const text = body.text && typeof body.text === "object" ? (body.text as Record<string, unknown>) : {};
+		return {
+			...body,
+			text: {
+				...text,
+				format: {
+					type: "json_schema",
+					name: "session_title",
+					schema: TITLE_JSON_SCHEMA,
+					strict: true,
+				},
+			},
+		};
 	}
 
-	return title;
+	if (model.api === "anthropic-messages") {
+		const params = payload as Record<string, unknown>;
+		const outputConfig = params.output_config && typeof params.output_config === "object"
+			? (params.output_config as Record<string, unknown>)
+			: {};
+		return {
+			...params,
+			output_config: {
+				...outputConfig,
+				format: {
+					type: "json_schema",
+					name: "session_title",
+					schema: TITLE_JSON_SCHEMA,
+				},
+			},
+		};
+	}
+
+	return payload;
 }
 
-function stripLeadingFiller(text: string): string {
-	let result = text.trim();
-	let changed = true;
+function parseTitleResponse(text: string): string | null {
+	const normalized = text.trim();
+	if (!normalized) {
+		return null;
+	}
 
-	while (changed) {
-		changed = false;
-		for (const pattern of LEADING_FILLER_PATTERNS) {
-			const next = result.replace(pattern, "").trim();
-			if (next !== result) {
-				result = next;
-				changed = true;
+	const candidates = [
+		normalized,
+		normalized.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim(),
+	];
+
+	const objectMatch = normalized.match(/\{[\s\S]*\}/);
+	if (objectMatch) {
+		candidates.push(objectMatch[0]);
+	}
+
+	for (const candidate of candidates) {
+		try {
+			const parsed = JSON.parse(candidate) as { title?: unknown };
+			if (typeof parsed.title === "string") {
+				const title = parsed.title.trim();
+				return title || null;
 			}
+		} catch {
+			// Ignore parse failures and continue trying the next structured candidate.
 		}
 	}
 
-	return result;
+	return null;
 }
 
-function titleCaseToken(token: string): string {
-	return token
-		.split("-")
-		.map((part) => (part ? `${part[0].toUpperCase()}${part.slice(1)}` : part))
-		.join("-");
-}
-
-function fallbackTitleFromPrompt(promptText: string): string | null {
-	const sourceText = trimSourceText(promptText, MAX_SOURCE_TEXT_CHARS);
-	const stripped = stripLeadingFiller(sourceText).replace(/[^\p{L}\p{N}\s-]+/gu, " ");
-	const allWords = stripped.match(/[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*/gu) ?? [];
-	const informativeWords = allWords.filter((word) => !STOP_WORDS.has(word.toLowerCase()));
-	const selectedWords = (informativeWords.length > 0 ? informativeWords : allWords).slice(0, MAX_FALLBACK_WORDS);
-
-	if (selectedWords.length > 0) {
-		return sanitizeTitle(selectedWords.map(titleCaseToken).join(" "));
-	}
-
-	const firstClause = sourceText
-		.split(/[\n.!?;:]+/)
-		.map((part) => part.trim())
-		.find(Boolean);
-	return firstClause ? sanitizeTitle(firstClause) : null;
-}
-
-async function generateSessionTitle(ctx: ExtensionContext): Promise<string | null> {
-	const firstUserMessage = getFirstUserMessageText(ctx);
-	if (!firstUserMessage) {
+async function generateSessionTitle(
+	description: string,
+	ctx: ExtensionContext,
+): Promise<string | null> {
+	const trimmed = trimDescription(description);
+	if (!trimmed) {
 		return null;
 	}
 
-	const sourceText = trimSourceText(firstUserMessage, MAX_SOURCE_TEXT_CHARS);
-	const model = await selectTitleModel(ctx.model, ctx.modelRegistry);
-	if (!model) {
+	try {
+		const model = await selectTitleModel(ctx.model, ctx.modelRegistry);
+		if (!model) {
+			return null;
+		}
+
+		const auth = await ctx.modelRegistry.getApiKeyAndHeaders(model);
+		if (!hasUsableAuth(auth)) {
+			return null;
+		}
+
+		const userMessage: UserMessage = {
+			role: "user",
+			content: [{ type: "text", text: trimmed }],
+			timestamp: Date.now(),
+		};
+
+		const response = await complete(
+			model,
+			{ systemPrompt: SESSION_TITLE_PROMPT, messages: [userMessage] },
+			{
+				apiKey: auth.apiKey,
+				headers: auth.headers,
+				signal: ctx.signal,
+				onPayload: async (payload) => buildStructuredOutputPayload(payload, model),
+			},
+		);
+
+		if (response.stopReason === "aborted") {
+			return null;
+		}
+
+		const text = response.content
+			.filter((block): block is { type: "text"; text: string } => block.type === "text")
+			.map((block) => block.text)
+			.join("\n");
+
+		if (response.stopReason === "error") {
+			return null;
+		}
+
+		const title = parseTitleResponse(text);
+		return title;
+	} catch {
 		return null;
 	}
-
-	const auth = await ctx.modelRegistry.getApiKeyAndHeaders(model);
-	if (!hasUsableAuth(auth)) {
-		return null;
-	}
-
-	const userMessage: UserMessage = {
-		role: "user",
-		content: [{ type: "text", text: `First user message:\n${sourceText}` }],
-		timestamp: Date.now(),
-	};
-
-	const response = await complete(
-		model,
-		{ systemPrompt: TITLE_SYSTEM_PROMPT, messages: [userMessage] },
-		{ apiKey: auth.apiKey, headers: auth.headers, signal: ctx.signal },
-	);
-
-	if (response.stopReason === "aborted") {
-		return null;
-	}
-
-	const responseText = response.content
-		.filter((block): block is { type: "text"; text: string } => block.type === "text")
-		.map((block) => block.text)
-		.join("\n");
-
-	const title = sanitizeTitle(responseText);
-	return title || null;
 }
 
 export default function (pi: ExtensionAPI) {
@@ -281,24 +273,22 @@ export default function (pi: ExtensionAPI) {
 			return;
 		}
 
-		if (countUserMessages(ctx) !== 1) {
+		const userMessageCount = countUserMessages(ctx);
+		if (userMessageCount !== 1) {
 			return;
-		}
-
-		let title: string | null = null;
-		try {
-			title = await generateSessionTitle(ctx);
-		} catch {
-			// Fall back to heuristic naming below.
 		}
 
 		const firstUserMessage = getFirstUserMessageText(ctx);
-		const nextTitle = title ?? (firstUserMessage ? fallbackTitleFromPrompt(firstUserMessage) : null);
-		if (!nextTitle) {
+		if (!firstUserMessage) {
 			return;
 		}
 
-		pi.setSessionName(nextTitle);
-		await syncSessionWindowTitle(pi, ctx, nextTitle);
+		const title = await generateSessionTitle(firstUserMessage, ctx);
+		if (!title) {
+			return;
+		}
+
+		pi.setSessionName(title);
+		await syncSessionWindowTitle(pi, ctx, title);
 	});
 }
