@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "0.69.0",
+  "lastChangelogVersion": "0.70.0",
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-5.4",
   "defaultThinkingLevel": "high",
@@ -18,7 +18,8 @@
   "hideThinkingBlock": false,
   "enabledModels": [
     "openai-codex/gpt-5.3-codex",
-    "openai-codex/gpt-5.4"
+    "openai-codex/gpt-5.4",
+    "openai-codex/gpt-5.5"
   ],
   "theme": "tokyo-night",
   "quietStartup": true,

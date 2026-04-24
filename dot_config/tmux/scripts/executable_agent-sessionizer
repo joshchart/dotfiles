@@ -2,7 +2,6 @@
 set -euo pipefail
 
 self_path=${BASH_SOURCE[0]}
-state_option='@pi_agent_state'
 completion_option='@pi_agent_completion_id'
 seen_completion_option='@pi_agent_seen_completion_id'
 last_visited_option='@pi_agent_last_visited'
