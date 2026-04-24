@@ -193,15 +193,6 @@ mark_pane_seen_without_visit() {
   mark_pane_seen_internal "$1" 0
 }
 
-mark_current_pane_seen() {
-  local pane_id
-
-  pane_id=$(current_pane_id)
-  [[ -n $pane_id ]] || return 0
-
-  mark_pane_seen "$pane_id"
-}
-
 mark_current_pane_seen_without_visit() {
   local pane_id
 
@@ -449,7 +440,7 @@ preview_pane() {
 
 list_pi_panes() {
   local short_tty pane_title location content preview_lines agent_marker metadata_state completion_id seen_completion_id last_visited state status_and_title max_location_width display_location display_status display_title current_pane is_current sorted_rows
-  local row index tmux_separator
+  local row tmux_separator
   local -a rows=()
 
   tmux_separator=$'\x1f'
@@ -582,9 +573,6 @@ case "${1:-}" in
   --preview)
     preview_pane "$2"
     ;;
-  --mark-seen-current)
-    mark_current_pane_seen
-    ;;
   --mark-seen-current-no-visit)
     mark_current_pane_seen_without_visit
     ;;
@@ -594,9 +582,6 @@ case "${1:-}" in
   --mark-seen-no-visit)
     mark_pane_seen_without_visit "$2"
     ;;
-  --finalize-jump)
-    finalize_jump_selection "$2"
-    ;;
   --apply-jump)
     apply_jump_selection "$2" "$3" "$4"
     ;;
@@ -604,7 +589,7 @@ case "${1:-}" in
     run_picker
     ;;
   *)
-    printf 'Usage: %s [--list | --preview <pane-id> | --mark-seen-current | --mark-seen-current-no-visit | --mark-seen <pane-id> | --mark-seen-no-visit <pane-id> | --finalize-jump <pane-id> | --apply-jump <pane-id> <session-name> <window-index>]\n' "$0" >&2
+    printf 'Usage: %s [--list | --preview <pane-id> | --mark-seen-current-no-visit | --mark-seen <pane-id> | --mark-seen-no-visit <pane-id> | --apply-jump <pane-id> <session-name> <window-index>]\n' "$0" >&2
     exit 1
     ;;
 esac
