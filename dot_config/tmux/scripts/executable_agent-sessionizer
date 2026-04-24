@@ -117,20 +117,31 @@ current_visit_tick() {
   printf '%s' "$now"
 }
 
-mark_pane_seen() {
+mark_pane_seen_internal() {
   local pane_id=$1
+  local update_visit=${2:-1}
   local completion_id now
 
   if ! tmux display-message -p -t "$pane_id" '#{pane_id}' >/dev/null 2>&1; then
     return 0
   fi
 
-  now=$(current_visit_tick)
-  set_tmux_pane_option "$pane_id" "$last_visited_option" "$now"
+  if (( update_visit == 1 )); then
+    now=$(current_visit_tick)
+    set_tmux_pane_option "$pane_id" "$last_visited_option" "$now"
+  fi
 
   completion_id=$(tmux_pane_option "$pane_id" "$completion_option")
   [[ -n $completion_id ]] && set_tmux_pane_option "$pane_id" "$seen_completion_option" "$completion_id"
   return 0
+}
+
+mark_pane_seen() {
+  mark_pane_seen_internal "$1" 1
+}
+
+mark_pane_seen_without_visit() {
+  mark_pane_seen_internal "$1" 0
 }
 
 mark_current_pane_seen() {
@@ -140,6 +151,15 @@ mark_current_pane_seen() {
   [[ -n $pane_id ]] || return 0
 
   mark_pane_seen "$pane_id"
+}
+
+mark_current_pane_seen_without_visit() {
+  local pane_id
+
+  pane_id=$(current_pane_id)
+  [[ -n $pane_id ]] || return 0
+
+  mark_pane_seen_without_visit "$pane_id"
 }
 
 normalize_meaningful_tail() {
@@ -338,14 +358,16 @@ preview_pane() {
 }
 
 list_pi_panes() {
-  local short_tty pane_title location content preview_lines agent_marker metadata_state completion_id seen_completion_id last_visited state status_and_title max_location_width display_location display_status display_title current_pane is_current
-  local row
+  local short_tty pane_title location content preview_lines agent_marker metadata_state completion_id seen_completion_id last_visited state status_and_title max_location_width display_location display_status display_title current_pane is_current sorted_rows
+  local row index tmux_separator
   local -a rows=()
+
+  tmux_separator=$'\x1f'
 
   max_location_width=0
   current_pane=$(current_pane_id)
 
-  while IFS=$'\t' read -r session_name window_index pane_index pane_id pane_tty pane_command window_activity pane_active pane_last pane_title agent_marker metadata_state completion_id seen_completion_id last_visited; do
+  while IFS="$tmux_separator" read -r session_name window_index pane_index pane_id pane_tty pane_command window_activity pane_active pane_last pane_title agent_marker metadata_state completion_id seen_completion_id last_visited; do
     [[ $pane_command == node ]] || continue
 
     if [[ $agent_marker != 1 ]]; then
@@ -379,10 +401,12 @@ list_pi_panes() {
     fi
     rows+=("${is_current:-0}"$'\t'"${last_visited:-0}"$'\t'"${window_activity:-0}"$'\t'"${pane_active:-0}"$'\t'"${pane_last:-0}"$'\t'"$pane_id"$'\t'"$session_name"$'\t'"$window_index"$'\t'"$pane_index"$'\t'"$location"$'\t'"$state"$'\t'"$pane_title"$'\t'"${preview_lines:-0}")
   done < <(
-    tmux list-panes -a -F '#{session_name}	#{window_index}	#{pane_index}	#{pane_id}	#{pane_tty}	#{pane_current_command}	#{window_activity}	#{pane_active}	#{pane_last}	#{pane_title}	#{@pi_agent}	#{@pi_agent_state}	#{@pi_agent_completion_id}	#{@pi_agent_seen_completion_id}	#{@pi_agent_last_visited}'
+    tmux list-panes -a -F "#{session_name}${tmux_separator}#{window_index}${tmux_separator}#{pane_index}${tmux_separator}#{pane_id}${tmux_separator}#{pane_tty}${tmux_separator}#{pane_current_command}${tmux_separator}#{window_activity}${tmux_separator}#{pane_active}${tmux_separator}#{pane_last}${tmux_separator}#{pane_title}${tmux_separator}#{@pi_agent}${tmux_separator}#{@pi_agent_state}${tmux_separator}#{@pi_agent_completion_id}${tmux_separator}#{@pi_agent_seen_completion_id}${tmux_separator}#{@pi_agent_last_visited}"
   )
 
   (( ${#rows[@]} == 0 )) && return 0
+
+  sorted_rows=$(printf '%s\n' "${rows[@]}" | sort -t $'\t' -k1,1n -k2,2nr -k3,3nr -k4,4nr -k5,5nr -k7,7 -k8,8nr -k9,9nr)
 
   while IFS= read -r row; do
     IFS=$'\t' read -r is_current last_visited window_activity pane_active pane_last pane_id session_name window_index pane_index location state pane_title preview_lines <<< "$row"
@@ -401,9 +425,7 @@ list_pi_panes() {
       "$display_status" \
       "$display_title" \
       "$preview_lines"
-  done < <(
-    printf '%s\n' "${rows[@]}" | sort -t $'\t' -k1,1n -k2,2nr -k3,3nr -k4,4nr -k5,5nr -k7,7 -k8,8nr -k9,9nr
-  )
+  done <<< "$sorted_rows"
 }
 
 show_empty_state() {
@@ -443,7 +465,7 @@ jump_to_selection() {
 
   self_quoted=$(printf '%q' "$self_path")
   pane_quoted=$(printf '%q' "$pane_id")
-  tmux run-shell -b "${self_quoted} --mark-seen ${pane_quoted}" >/dev/null 2>&1 || true
+  tmux run-shell -b "${self_quoted} --mark-seen-no-visit ${pane_quoted}" >/dev/null 2>&1 || true
 }
 
 run_picker() {
@@ -486,14 +508,20 @@ case "${1:-}" in
   --mark-seen-current)
     mark_current_pane_seen
     ;;
+  --mark-seen-current-no-visit)
+    mark_current_pane_seen_without_visit
+    ;;
   --mark-seen)
     mark_pane_seen "$2"
+    ;;
+  --mark-seen-no-visit)
+    mark_pane_seen_without_visit "$2"
     ;;
   '')
     run_picker
     ;;
   *)
-    printf 'Usage: %s [--list | --preview <pane-id> | --mark-seen-current | --mark-seen <pane-id>]\n' "$0" >&2
+    printf 'Usage: %s [--list | --preview <pane-id> | --mark-seen-current | --mark-seen-current-no-visit | --mark-seen <pane-id> | --mark-seen-no-visit <pane-id>]\n' "$0" >&2
     exit 1
     ;;
 esac

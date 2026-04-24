@@ -7,6 +7,8 @@ const AGENT_OPTION = "@pi_agent";
 const STATE_OPTION = "@pi_agent_state";
 const COMPLETION_OPTION = "@pi_agent_completion_id";
 const SEEN_COMPLETION_OPTION = "@pi_agent_seen_completion_id";
+const LAST_VISITED_OPTION = "@pi_agent_last_visited";
+const LAST_VISITED_TICK_OPTION = "@pi_agent_last_visited_tick";
 const LAST_UPDATE_OPTION = "@pi_agent_last_update";
 
 const INPUT_ASSOCIATION_WINDOW_MS = 5_000;
@@ -58,6 +60,30 @@ async function getVisiblePaneIds(pi: ExtensionAPI): Promise<Set<string>> {
 			.map((line) => line.trim())
 			.filter(Boolean),
 	);
+}
+
+async function getCurrentVisitTick(pi: ExtensionAPI): Promise<string> {
+	let now = Math.floor(Date.now() / 1000);
+	const previous = Number.parseInt((await runTmux(pi, ["show-options", "-g", "-v", LAST_VISITED_TICK_OPTION])).trim(), 10);
+	if (Number.isFinite(previous) && now <= previous) {
+		now = previous + 1;
+	}
+	await runTmux(pi, ["set-option", "-gq", LAST_VISITED_TICK_OPTION, String(now)]);
+	return String(now);
+}
+
+async function seedPaneVisitIfVisible(pi: ExtensionAPI, paneId: string): Promise<void> {
+	const lastVisited = await getPaneOption(pi, paneId, LAST_VISITED_OPTION);
+	if (lastVisited) {
+		return;
+	}
+
+	const visiblePaneIds = await getVisiblePaneIds(pi);
+	if (!visiblePaneIds.has(paneId)) {
+		return;
+	}
+
+	await setPaneOption(pi, paneId, LAST_VISITED_OPTION, await getCurrentVisitTick(pi));
 }
 
 function getTextContent(content: unknown): string {
@@ -126,6 +152,7 @@ async function initializeCurrentPaneState(pi: ExtensionAPI): Promise<void> {
 	}
 
 	await setPaneOption(pi, paneId, AGENT_OPTION, "1");
+	await seedPaneVisitIfVisible(pi, paneId);
 
 	const existingState = await getPaneOption(pi, paneId, STATE_OPTION);
 	if (existingState === "working" || existingState === "blocked" || existingState === "idle" || existingState === "unknown") {
