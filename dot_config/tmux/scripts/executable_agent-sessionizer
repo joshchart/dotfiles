@@ -6,6 +6,8 @@ completion_option='@pi_agent_completion_id'
 seen_completion_option='@pi_agent_seen_completion_id'
 last_visited_option='@pi_agent_last_visited'
 last_visited_tick_option='@pi_agent_last_visited_tick'
+jump_target_option='@pi_agent_jump_target_pane'
+suppress_visit_until_option='@pi_agent_suppress_visit_until_ms'
 pi_tty_cache=''
 pi_tty_cache_loaded=0
 popup_width_cache=''
@@ -60,6 +62,23 @@ set_tmux_pane_option() {
   fi
 }
 
+tmux_global_option() {
+  local option=$1
+
+  tmux show-options -g -v "$option" 2>/dev/null || true
+}
+
+set_tmux_global_option() {
+  local option=$1
+  local value=${2-}
+
+  if [[ -n $value ]]; then
+    tmux set-option -gq "$option" "$value" >/dev/null 2>&1 || true
+  else
+    tmux set-option -gu "$option" >/dev/null 2>&1 || true
+  fi
+}
+
 capture_plain_pane() {
   local pane_id=$1
 
@@ -100,6 +119,10 @@ tty_has_pi() {
   [[ -n $pi_tty_cache ]] && grep -Fxq "$short_tty" <<< "$pi_tty_cache"
 }
 
+current_time_ms() {
+  python3 -c 'import time; print(int(time.time() * 1000))' 2>/dev/null || printf '0\n'
+}
+
 current_visit_tick() {
   local now previous
 
@@ -108,13 +131,35 @@ current_visit_tick() {
     now=0
   fi
 
-  previous=$(tmux show-options -g -v "$last_visited_tick_option" 2>/dev/null || true)
+  previous=$(tmux_global_option "$last_visited_tick_option")
   if [[ $previous =~ ^[0-9]+$ ]] && (( now <= previous )); then
     now=$(( previous + 1 ))
   fi
 
-  tmux set-option -gq "$last_visited_tick_option" "$now" >/dev/null 2>&1 || true
+  set_tmux_global_option "$last_visited_tick_option" "$now"
   printf '%s' "$now"
+}
+
+visit_updates_suppressed_for_pane() {
+  local pane_id=$1
+  local suppress_until jump_target now_ms
+
+  suppress_until=$(tmux_global_option "$suppress_visit_until_option")
+  if [[ ! $suppress_until =~ ^[0-9]+$ ]]; then
+    return 1
+  fi
+
+  now_ms=$(current_time_ms)
+  if (( now_ms > suppress_until )); then
+    return 1
+  fi
+
+  jump_target=$(tmux_global_option "$jump_target_option")
+  if [[ -n $jump_target && $pane_id == "$jump_target" ]]; then
+    return 1
+  fi
+
+  return 0
 }
 
 mark_pane_seen_internal() {
@@ -124,6 +169,10 @@ mark_pane_seen_internal() {
 
   if ! tmux display-message -p -t "$pane_id" '#{pane_id}' >/dev/null 2>&1; then
     return 0
+  fi
+
+  if (( update_visit == 1 )) && visit_updates_suppressed_for_pane "$pane_id"; then
+    update_visit=0
   fi
 
   if (( update_visit == 1 )); then
@@ -160,6 +209,47 @@ mark_current_pane_seen_without_visit() {
   [[ -n $pane_id ]] || return 0
 
   mark_pane_seen_without_visit "$pane_id"
+}
+
+clear_visit_suppression() {
+  set_tmux_global_option "$jump_target_option"
+  set_tmux_global_option "$suppress_visit_until_option"
+}
+
+finalize_jump_selection() {
+  local pane_id=$1
+
+  mark_pane_seen "$pane_id"
+  clear_visit_suppression
+}
+
+apply_jump_selection() {
+  local pane_id=$1
+  local session_name=$2
+  local window_index=$3
+  local current_session current_window current_pane suppress_until_ms
+
+  suppress_until_ms=$(( $(current_time_ms) + 750 ))
+  set_tmux_global_option "$jump_target_option" "$pane_id"
+  set_tmux_global_option "$suppress_visit_until_option" "$suppress_until_ms"
+
+  current_session=$(tmux display-message -p '#{session_name}' 2>/dev/null || true)
+  if [[ $current_session != "$session_name" ]]; then
+    tmux switch-client -t "$session_name"
+  fi
+
+  current_window=$(tmux display-message -p '#{window_index}' 2>/dev/null || true)
+  if [[ $current_window != "$window_index" ]]; then
+    tmux select-window -t "${session_name}:${window_index}"
+  fi
+
+  current_pane=$(tmux display-message -p '#{pane_id}' 2>/dev/null || true)
+  if [[ $current_pane != "$pane_id" ]]; then
+    tmux select-pane -t "$pane_id"
+  fi
+
+  sleep 0.05
+  finalize_jump_selection "$pane_id"
 }
 
 normalize_meaningful_tail() {
@@ -406,7 +496,7 @@ list_pi_panes() {
 
   (( ${#rows[@]} == 0 )) && return 0
 
-  sorted_rows=$(printf '%s\n' "${rows[@]}" | sort -t $'\t' -k1,1n -k2,2nr -k3,3nr -k4,4nr -k5,5nr -k7,7 -k8,8nr -k9,9nr)
+  sorted_rows=$(printf '%s\n' "${rows[@]}" | sort -t $'\t' -k1,1n -k2,2nr -k7,7 -k8,8nr -k9,9nr)
 
   while IFS= read -r row; do
     IFS=$'\t' read -r is_current last_visited window_activity pane_active pane_last pane_id session_name window_index pane_index location state pane_title preview_lines <<< "$row"
@@ -444,28 +534,15 @@ show_empty_state() {
 
 jump_to_selection() {
   local selection=$1
-  local pane_id session_name window_index current_session current_window current_pane self_quoted pane_quoted
+  local pane_id session_name window_index self_quoted pane_quoted session_quoted window_quoted
 
   IFS=$'\t' read -r _ _ _ pane_id session_name window_index _ _ _ _ <<< "$selection"
 
-  current_session=$(tmux display-message -p '#{session_name}' 2>/dev/null || true)
-  if [[ $current_session != "$session_name" ]]; then
-    tmux switch-client -t "$session_name"
-  fi
-
-  current_window=$(tmux display-message -p '#{window_index}' 2>/dev/null || true)
-  if [[ $current_window != "$window_index" ]]; then
-    tmux select-window -t "${session_name}:${window_index}"
-  fi
-
-  current_pane=$(tmux display-message -p '#{pane_id}' 2>/dev/null || true)
-  if [[ $current_pane != "$pane_id" ]]; then
-    tmux select-pane -t "$pane_id"
-  fi
-
   self_quoted=$(printf '%q' "$self_path")
   pane_quoted=$(printf '%q' "$pane_id")
-  tmux run-shell -b "${self_quoted} --mark-seen-no-visit ${pane_quoted}" >/dev/null 2>&1 || true
+  session_quoted=$(printf '%q' "$session_name")
+  window_quoted=$(printf '%q' "$window_index")
+  tmux run-shell -b "${self_quoted} --apply-jump ${pane_quoted} ${session_quoted} ${window_quoted}" >/dev/null 2>&1 || true
 }
 
 run_picker() {
@@ -517,11 +594,17 @@ case "${1:-}" in
   --mark-seen-no-visit)
     mark_pane_seen_without_visit "$2"
     ;;
+  --finalize-jump)
+    finalize_jump_selection "$2"
+    ;;
+  --apply-jump)
+    apply_jump_selection "$2" "$3" "$4"
+    ;;
   '')
     run_picker
     ;;
   *)
-    printf 'Usage: %s [--list | --preview <pane-id> | --mark-seen-current | --mark-seen-current-no-visit | --mark-seen <pane-id> | --mark-seen-no-visit <pane-id>]\n' "$0" >&2
+    printf 'Usage: %s [--list | --preview <pane-id> | --mark-seen-current | --mark-seen-current-no-visit | --mark-seen <pane-id> | --mark-seen-no-visit <pane-id> | --finalize-jump <pane-id> | --apply-jump <pane-id> <session-name> <window-index>]\n' "$0" >&2
     exit 1
     ;;
 esac
