@@ -2,13 +2,12 @@
  * Auto Session Name Extension
  *
  * Names the session once, after the first completed agent run.
- * The title generation logic is intentionally kept close to Claude's shared
- * session-title utility: pass in a trimmed description, ask for a structured
- * JSON title, parse it, and return null on failure.
+ * The title generation flow is simple: trim the description, request a
+ * structured JSON title, parse it, and return null on failure.
  */
 import { complete, type Api, type Model, type UserMessage } from "@mariozechner/pi-ai";
 import type { ExtensionAPI, ExtensionContext, ModelRegistry } from "@mariozechner/pi-coding-agent";
-import { syncSessionWindowTitle } from "../lib/tmux-pane-title";
+import { syncSessionWindowTitle } from "./tmux-pane-title";
 
 const CODEX_MODEL_ID = "gpt-5.1-codex-mini";
 const HAIKU_MODEL_ID = "claude-haiku-4-5";
