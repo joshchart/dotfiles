@@ -39,6 +39,7 @@ README.md
 .config/zsh/.zsh_sessions/**
 
 .config/pi/agent/auth.json
+.config/pi/agent/models.json
 .config/pi/agent/sessions/**
 .config/pi/agent/bin/**
 .config/pi/history/**
