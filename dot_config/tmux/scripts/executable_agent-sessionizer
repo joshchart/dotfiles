@@ -85,12 +85,6 @@ capture_plain_pane() {
   tmux capture-pane -p -t "$pane_id" -S -120 2>/dev/null || true
 }
 
-preview_line_count() {
-  local pane_id=$1
-
-  tmux capture-pane -p -t "$pane_id" 2>/dev/null | awk 'END { print NR + 0 }'
-}
-
 current_pane_id() {
   tmux display-message -p '#{pane_id}' 2>/dev/null || true
 }
@@ -477,7 +471,7 @@ list_pi_panes() {
     fi
 
     state=$(effective_state_for_pane "$pane_id" "$metadata_state" "$completion_id" "$seen_completion_id" "$content")
-    preview_lines=$(preview_line_count "$pane_id")
+    preview_lines=0
     if [[ $pane_id == "$current_pane" ]]; then
       is_current=1
     else
