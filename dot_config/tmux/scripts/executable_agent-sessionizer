@@ -425,7 +425,7 @@ preview_pane() {
 }
 
 list_pi_panes() {
-  local short_tty pane_title location content preview_lines agent_marker metadata_state completion_id seen_completion_id last_visited state max_location_width current_pane is_current sorted_rows width title_width
+  local short_tty pane_title location content agent_marker metadata_state completion_id seen_completion_id last_visited state max_location_width current_pane is_current sorted_rows width
   local row tmux_separator
   local -a rows=()
 
@@ -460,13 +460,12 @@ list_pi_panes() {
     fi
 
     state=$(effective_state_for_pane "$pane_id" "$metadata_state" "$completion_id" "$seen_completion_id" "$content")
-    preview_lines=0
     if [[ $pane_id == "$current_pane" ]]; then
       is_current=1
     else
       is_current=0
     fi
-    rows+=("${is_current:-0}"$'\t'"${last_visited:-0}"$'\t'"${window_activity:-0}"$'\t'"${pane_active:-0}"$'\t'"${pane_last:-0}"$'\t'"$pane_id"$'\t'"$session_name"$'\t'"$window_index"$'\t'"$pane_index"$'\t'"$location"$'\t'"$state"$'\t'"$pane_title"$'\t'"${preview_lines:-0}")
+    rows+=("${is_current:-0}"$'\t'"${last_visited:-0}"$'\t'"${window_activity:-0}"$'\t'"${pane_active:-0}"$'\t'"${pane_last:-0}"$'\t'"$pane_id"$'\t'"$session_name"$'\t'"$window_index"$'\t'"$pane_index"$'\t'"$location"$'\t'"$state"$'\t'"$pane_title")
   done < <(
     tmux list-panes -a -F "#{session_name}${tmux_separator}#{window_index}${tmux_separator}#{pane_index}${tmux_separator}#{pane_id}${tmux_separator}#{pane_tty}${tmux_separator}#{pane_current_command}${tmux_separator}#{window_activity}${tmux_separator}#{pane_active}${tmux_separator}#{pane_last}${tmux_separator}#{pane_title}${tmux_separator}#{@pi_agent}${tmux_separator}#{@pi_agent_state}${tmux_separator}#{@pi_agent_completion_id}${tmux_separator}#{@pi_agent_seen_completion_id}${tmux_separator}#{@pi_agent_last_visited}"
   )
@@ -477,10 +476,10 @@ list_pi_panes() {
   width=$(popup_width)
 
   while IFS= read -r row; do
-    IFS=$'\t' read -r is_current last_visited window_activity pane_active pane_last pane_id session_name window_index pane_index location state pane_title preview_lines <<< "$row"
+    IFS=$'\t' read -r is_current last_visited window_activity pane_active pane_last pane_id session_name window_index pane_index location state pane_title <<< "$row"
     format_status_and_title "$location" "$state" "$pane_title" "$max_location_width" "$width"
 
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
       "$window_activity" \
       "$pane_active" \
       "$pane_last" \
@@ -490,8 +489,7 @@ list_pi_panes() {
       "$pane_index" \
       "$formatted_location" \
       "$formatted_status" \
-      "$formatted_title" \
-      "$preview_lines"
+      "$formatted_title"
   done <<< "$sorted_rows"
 }
 
