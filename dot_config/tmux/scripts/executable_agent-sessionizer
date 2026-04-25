@@ -535,7 +535,7 @@ jump_to_selection() {
 }
 
 run_picker() {
-  local data selection self_quoted preview_cmd
+  local data selection preview_cmd
 
   color_status_mode=1
   data=$(list_pi_panes)
@@ -543,8 +543,7 @@ run_picker() {
     show_empty_state
   fi
 
-  self_quoted=$(printf '%q' "$self_path")
-  preview_cmd="${self_quoted} --preview {4}"
+  preview_cmd='tmux capture-pane -ep -t {4} 2>/dev/null || printf "Pane %s is no longer available.\n" {4}'
 
   selection=$(printf '%s\n' "$data" | \
     env -u FZF_DEFAULT_OPTS -u FZF_DEFAULT_OPTS_FILE -u FZF_DEFAULT_COMMAND fzf \
