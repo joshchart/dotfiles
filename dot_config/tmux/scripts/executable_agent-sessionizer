@@ -88,7 +88,7 @@ capture_plain_pane() {
 preview_line_count() {
   local pane_id=$1
 
-  tmux capture-pane -p -t "$pane_id" -S -200 2>/dev/null | awk 'END { print NR + 0 }'
+  tmux capture-pane -p -t "$pane_id" 2>/dev/null | awk 'END { print NR + 0 }'
 }
 
 current_pane_id() {
@@ -435,7 +435,7 @@ preview_pane() {
     return
   fi
 
-  tmux capture-pane -ep -t "$pane_id" -S -200 2>/dev/null || printf 'Unable to capture pane %s.\n' "$pane_id"
+  tmux capture-pane -ep -t "$pane_id" 2>/dev/null || printf 'Unable to capture pane %s.\n' "$pane_id"
 }
 
 list_pi_panes() {
@@ -556,7 +556,7 @@ run_picker() {
       --with-nth=8,9,10 \
       --nth=1,2,3 \
       --preview "$preview_cmd" \
-      --preview-window='right,45%,wrap,+{11}-25' \
+      --preview-window='right,45%,wrap' \
       --prompt='Pi > ' \
       --header=$'session:window.pane   status    title' \
       --cycle \
