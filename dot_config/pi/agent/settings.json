@@ -23,5 +23,6 @@
   ],
   "theme": "tokyo-night",
   "quietStartup": true,
-  "enableInstallTelemetry": true
+  "enableInstallTelemetry": true,
+  "editorPaddingX": 0
 }

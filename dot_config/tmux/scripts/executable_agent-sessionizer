@@ -79,12 +79,6 @@ set_tmux_global_option() {
   fi
 }
 
-capture_plain_pane() {
-  local pane_id=$1
-
-  tmux capture-pane -p -t "$pane_id" -S -120 2>/dev/null || true
-}
-
 current_pane_id() {
   tmux display-message -p '#{pane_id}' 2>/dev/null || true
 }
@@ -237,71 +231,15 @@ apply_jump_selection() {
   finalize_jump_selection "$pane_id"
 }
 
-normalize_meaningful_tail() {
-  awk '
-    function trim(s) {
-      sub(/^[[:space:]]+/, "", s)
-      sub(/[[:space:]]+$/, "", s)
-      return s
-    }
-    {
-      line = trim($0)
-      if (line == "") next
-      if (line ~ /^[-=~_[:space:]]{8,}$/) next
-      if (index(line, "────") > 0 || index(line, "──────") > 0) next
-      if (line ~ /[[:space:]](INSERT|NORMAL)$/) next
-      if (line ~ /^~\//) next
-      if (line ~ /gpt-[0-9]/) next
-      if (line ~ /^(Elapsed|Took) [0-9.]+s$/) next
-      print line
-    }
-  ' | tail -n 8
-}
-
-heuristic_raw_state_from_content() {
-  local content=$1
-  local normalized_tail
-
-  if [[ -z $content ]]; then
-    printf 'unknown'
-    return
-  fi
-
-  if printf '%s\n' "$content" | grep -Eq '(^|[[:space:]])Working\.\.\.$'; then
-    printf 'working'
-    return
-  fi
-
-  normalized_tail=$(printf '%s\n' "$content" | normalize_meaningful_tail | tr '\n' ' ')
-  normalized_tail=$(trim "$normalized_tail")
-
-  if [[ -n $normalized_tail ]] && printf '%s\n' "$normalized_tail" | grep -Eiq '(\?[[:space:]]*$|\bdo you want me\b|\bwould you like me\b|\bshould i\b|\bcan i\b|\bwhat would you like\b|\bhow would you like\b|\bwhich (one|option|approach|path|version)\b|\bplease (provide|confirm|approve|share|pick|choose|select|send)\b|\b(approval|input) (is )?required\b|\bwaiting for (input|approval|confirmation)\b|\blet me know\b)'; then
-    printf 'blocked'
-    return
-  fi
-
-  if printf '%s\n' "$content" | grep -Eq '(^|[[:space:]])(INSERT|NORMAL)$|gpt-[0-9]|^~/' ; then
-    printf 'idle'
-    return
-  fi
-
-  printf 'unknown'
-}
-
 raw_state_for_pane() {
   local metadata_state=$1
-  local pane_id=$2
-  local content=${3-}
 
   case "$metadata_state" in
     working|blocked|idle|unknown)
       printf '%s' "$metadata_state"
       ;;
     *)
-      if [[ -z ${content:-} ]]; then
-        content=$(capture_plain_pane "$pane_id")
-      fi
-      heuristic_raw_state_from_content "$content"
+      printf 'unknown'
       ;;
   esac
 }
@@ -311,10 +249,9 @@ effective_state_for_pane() {
   local metadata_state=$2
   local completion_id=$3
   local seen_completion_id=$4
-  local content=${5-}
   local raw_state
 
-  raw_state=$(raw_state_for_pane "$metadata_state" "$pane_id" "$content")
+  raw_state=$(raw_state_for_pane "$metadata_state")
   if [[ $raw_state != idle ]]; then
     printf '%s' "$raw_state"
     return
@@ -425,7 +362,7 @@ preview_pane() {
 }
 
 list_pi_panes() {
-  local short_tty pane_title location content agent_marker metadata_state completion_id seen_completion_id last_visited state max_location_width current_pane is_current sorted_rows width
+  local short_tty pane_title location agent_marker metadata_state completion_id seen_completion_id last_visited state max_location_width current_pane is_current sorted_rows width
   local row tmux_separator
   local -a rows=()
 
@@ -454,12 +391,7 @@ list_pi_panes() {
       max_location_width=${#location}
     fi
 
-    content=''
-    if [[ ! $metadata_state =~ ^(working|blocked|idle|unknown)$ ]]; then
-      content=$(capture_plain_pane "$pane_id")
-    fi
-
-    state=$(effective_state_for_pane "$pane_id" "$metadata_state" "$completion_id" "$seen_completion_id" "$content")
+    state=$(effective_state_for_pane "$pane_id" "$metadata_state" "$completion_id" "$seen_completion_id")
     if [[ $pane_id == "$current_pane" ]]; then
       is_current=1
     else

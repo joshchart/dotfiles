@@ -10,6 +10,7 @@ README.md
 .config/**/.pi/**
 
 .config/tmux/plugins/
+.config/tmux/scripts/benchmark-agent-sessionizer
 
 .config/sketchybar/helpers/event_providers/cpu_load/bin
 .config/sketchybar/helpers/event_providers/cpu_load/bin/**

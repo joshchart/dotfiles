@@ -3,8 +3,8 @@
  *
  * Opens the last AI response in an external text editor (respects $VISUAL
  * or $EDITOR environment variables). When you save and exit the editor,
- * the edited content is automatically sent back to the chat as your next
- * message.
+ * the edited content is placed into pi's input editor so you can review
+ * it before sending.
  *
  * This is useful for:
  *   - Editing AI responses before re-sending them
@@ -12,11 +12,12 @@
  *   - Iterating on AI responses with custom edits
  *
  * Usage:
- *   /parrot         - Open last AI message in external editor
- *   Alt+R          - Keyboard shortcut for the same action
+ *   /parrot         - Open last AI message and prefill pi input
+ *   Alt+R           - Keyboard shortcut for the same action
  *
  * The extension preserves the original message content, opens it in your
- * preferred editor, and sends your edited version back to the chat.
+ * preferred editor, and pre-fills pi's input editor with your edited
+ * version.
  */
 
 import { spawnSync } from "node:child_process";
@@ -34,10 +35,9 @@ import type { TextContent } from "@mariozechner/pi-ai";
 import { Key } from "@mariozechner/pi-tui";
 
 export const PARROT_DESCRIPTION =
-  "Open last AI message in external editor, then send edited message after you save and exit external editor";
+  "Open last AI message in external editor, then prefill pi input with the edited message after you save and exit";
 
 export const PARROT_DEFAULT_KEYBOARD_SHORTCUT = Key.alt("r");
-export const PARROT_CUSTOM_MESSAGE_TYPE = "🦜 parrot squawking";
 
 /**
  * Find the last assistant message text on the current branch.
@@ -241,12 +241,11 @@ export function runEditor(filePath: string): EditorResult {
 }
 
 /**
- * Handle the result from running the editor and decide what to notify/send
+ * Handle the result from running the editor and decide what to notify/do
  */
 export function handleEditorResult(
   result: EditorResult,
   ui: ExtensionUIContext,
-  sendMessage: ExtensionAPI["sendMessage"],
 ): void {
   const { content, error, exitCode } = result;
 
@@ -259,28 +258,22 @@ export function handleEditorResult(
     const editorCmd = getEditorCommand();
 
     ui.notify(
-      `'${editorCmd}' exited with code ${exitCode}. Not sending message`,
+      `'${editorCmd}' exited with code ${exitCode}. Not updating input`,
       "warning",
     );
     return;
   }
 
   if (!content) {
-    ui.notify("No message to send", "info");
+    ui.notify("No message to copy into input", "info");
     return;
   }
 
-  sendMessage(
-    {
-      customType: PARROT_CUSTOM_MESSAGE_TYPE,
-      content,
-      display: true,
-    },
-    { triggerTurn: true, deliverAs: "steer" },
-  );
+  ui.setEditorText(content);
+  ui.notify("Parrot copied edited message into input", "info");
 }
 
-export async function parrotHandler(pi: ExtensionAPI, ctx: ExtensionContext) {
+export async function parrotHandler(ctx: ExtensionContext) {
   if (!ctx.hasUI) {
     ctx.ui.notify("parrot requires interactive mode", "error");
     return;
@@ -321,21 +314,21 @@ export async function parrotHandler(pi: ExtensionAPI, ctx: ExtensionContext) {
     return { render: () => [], invalidate: () => {} };
   });
 
-  handleEditorResult(result, ctx.ui, pi.sendMessage);
+  handleEditorResult(result, ctx.ui);
 }
 
 export default function (pi: ExtensionAPI) {
   pi.registerShortcut(PARROT_DEFAULT_KEYBOARD_SHORTCUT, {
     description: PARROT_DESCRIPTION,
     handler: async (ctx: ExtensionContext) => {
-      await parrotHandler(pi, ctx);
+      await parrotHandler(ctx);
     },
   });
 
   pi.registerCommand("parrot", {
     description: PARROT_DESCRIPTION,
     handler: async (_args: string, ctx: ExtensionContext) => {
-      await parrotHandler(pi, ctx);
+      await parrotHandler(ctx);
     },
   });
 }
