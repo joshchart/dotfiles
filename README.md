@@ -10,7 +10,7 @@ On a new Mac, the intended setup flow is:
 2. install Homebrew
 3. install chezmoi
 4. apply this repo with chezmoi
-5. run `~/.config/bootstrap-pi.sh`
+5. run `~/.config/bootstrap.sh`
 6. finish app logins and macOS permissions
 
 ## Prerequisites
@@ -56,7 +56,7 @@ chezmoi init --apply https://github.com/joshchart/dotfiles.git
 This should install the managed config into `~/.config`, including:
 
 - `~/.config/Brewfile`
-- `~/.config/bootstrap-pi.sh`
+- `~/.config/bootstrap.sh`
 - `~/.config/pi/agent/setup.sh`
 - `~/.config/sketchybar/helpers/install.sh`
 
@@ -65,15 +65,16 @@ This should install the managed config into `~/.config`, including:
 After chezmoi apply completes:
 
 ```sh
-bash ~/.config/bootstrap-pi.sh
+bash ~/.config/bootstrap.sh
 ```
 
 The bootstrap script currently does the following:
 
 1. runs `brew bundle --file ~/.config/Brewfile`
-2. runs `~/.config/sketchybar/helpers/install.sh`
-3. installs the pi CLI globally with npm
-4. runs `~/.config/pi/agent/setup.sh`
+2. installs tmux plugins
+3. runs `~/.config/sketchybar/helpers/install.sh`
+4. installs the pi CLI globally with npm
+5. runs `~/.config/pi/agent/setup.sh`
 
 ## Post-bootstrap manual steps
 
@@ -119,11 +120,11 @@ To refresh an existing machine:
 
 ```sh
 chezmoi update
-bash ~/.config/bootstrap-pi.sh
+bash ~/.config/bootstrap.sh
 ```
 
 ## Notes
 
-- `~/.config/bootstrap-pi.sh` expects this config to live at `~/.config`.
+- `~/.config/bootstrap.sh` expects this config to live at `~/.config`.
 - This repo is intended to be applied with chezmoi, not cloned directly into arbitrary paths.
 - This README is stored in the chezmoi source repo and ignored from target application.
