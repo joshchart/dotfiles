@@ -104,7 +104,11 @@ echo ""
 mkdir -p "$WORKSPACES_DIR"
 if [ -d "$PI_DIFF_REVIEW_DIR/.git" ]; then
   echo "Updating pi-diff-review in $PI_DIFF_REVIEW_DIR"
-  git -C "$PI_DIFF_REVIEW_DIR" pull --ff-only
+  if git -C "$PI_DIFF_REVIEW_DIR" rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
+    git -C "$PI_DIFF_REVIEW_DIR" pull --ff-only
+  else
+    echo "  No upstream configured for current branch; skipping pull"
+  fi
 elif [ -e "$PI_DIFF_REVIEW_DIR" ]; then
   echo "⚠️  $PI_DIFF_REVIEW_DIR exists but is not a git repo"
   echo "   Remove it or clone $PI_DIFF_REVIEW_REPO_URL manually"
