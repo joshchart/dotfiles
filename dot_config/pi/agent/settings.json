@@ -17,9 +17,10 @@
   ],
   "hideThinkingBlock": false,
   "enabledModels": [
-    "openai-codex/gpt-5.3-codex",
     "openai-codex/gpt-5.4",
-    "openai-codex/gpt-5.5"
+    "openai-codex/gpt-5.5",
+    "opencode/big-pickle",
+    "opencode/kimi-k2.5"
   ],
   "theme": "tokyo-night",
   "quietStartup": true,

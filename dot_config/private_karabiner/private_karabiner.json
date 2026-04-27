@@ -369,7 +369,7 @@
                                             "value": 1
                                         }
                                     },
-                                    { "shell_command": "open -a 'Vesktop.app'" }
+                                    { "shell_command": "open -a 'Discord.app'" }
                                 ],
                                 "type": "basic"
                             },
