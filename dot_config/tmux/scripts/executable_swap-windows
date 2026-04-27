@@ -9,11 +9,11 @@ SESSION="$(tmux display-message -p '#{session_name}')"
 WINDOWS=$(tmux list-windows -t "$SESSION" -F '#{window_index}: #{window_name}')
 
 # First popup - select source
-SOURCE=$(printf '%s\n' "$WINDOWS" | fzf --prompt="Swap from: " --height=~50% --border) || exit 0
+SOURCE=$(printf '%s\n' "$WINDOWS" | fzf --layout=default --prompt="Swap from: " --border) || exit 0
 SOURCE_NUM=$(echo "$SOURCE" | cut -d: -f1)
 
 # Second popup - select target (excluding source)
-TARGET=$(printf '%s\n' "$WINDOWS" | grep -Fvx "$SOURCE" | fzf --prompt="Swap with: " --height=~50% --border) || exit 0
+TARGET=$(printf '%s\n' "$WINDOWS" | grep -Fvx "$SOURCE" | fzf --layout=default --prompt="Swap with: " --border) || exit 0
 TARGET_NUM=$(echo "$TARGET" | cut -d: -f1)
 
 # Perform swap
