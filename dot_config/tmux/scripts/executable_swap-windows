@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Swap two tmux windows with fzf
+# Usage: swap-windows
+# Opens popup to select source, then target, then swaps
+
+SESSION="$(tmux display-message -p '#{session_name}')"
+
+# Get all windows as list
+WINDOWS=$(tmux list-windows -t "$SESSION" -F '#{window_index}: #{window_name}')
+
+# First popup - select source
+SOURCE=$(echo "$WINDOWS" | fzf --prompt="Swap from: " --height=~50% --border) || exit 0
+SOURCE_NUM=$(echo "$SOURCE" | cut -d: -f1)
+
+# Second popup - select target
+TARGET=$(echo "$WINDOWS" | fzf --prompt="Swap with: " --height=~50% --border) || exit 0
+TARGET_NUM=$(echo "$TARGET" | cut -d: -f1)
+
+# Perform swap
+tmux swap-window -s "$SOURCE_NUM" -t "$TARGET_NUM"
+
+# Show result (display for .75 seconds)
+tmux display-message -d 750 "Swapped ←$SOURCE_NUM↔$TARGET_NUM→"
