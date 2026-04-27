@@ -32,4 +32,5 @@ brew "tree-sitter-cli"  # Neovim
 brew "tree"             # Helpful for directory structure visualization
 brew "grep"
 brew "node"             # used for Pi
+brew "python"           # used by pi/agent/setup.sh for settings sync on reruns
 brew "fzf"              # Fuzzy finder for tmux scripts (swap-windows, sessionizer)
