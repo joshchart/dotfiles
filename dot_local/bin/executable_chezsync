@@ -15,7 +15,6 @@ What it does:
   1. forgets tracked paths that were deleted locally (DA in `chezmoi status`)
   2. re-adds modified tracked files from the live target
   3. adds each managed top-level target again to pick up new files
-  4. includes selected untracked top-level files (for example ~/.config/bootstrap.sh)
 
 Notes:
   - With your chezmoi git auto-commit/auto-push settings, --apply will create
@@ -112,12 +111,6 @@ managed_roots() {
   ' | sort -u
 }
 
-extra_roots() {
-  cat <<'EOF'
-.config/bootstrap.sh
-EOF
-}
-
 path_is_under_requested_roots() {
   local rel_path="$1"
   shift
@@ -132,23 +125,16 @@ path_is_under_requested_roots() {
   return 1
 }
 
-declare -a managed_root_paths=()
-while IFS= read -r rel_root; do
-  [[ -n "$rel_root" ]] || continue
-  managed_root_paths+=("$HOME/$rel_root")
-done < <(managed_roots)
-
 declare -a roots=()
 if ((${#requested_targets[@]})); then
   for target in "${requested_targets[@]}"; do
     roots+=("$(normalize_target "$target")")
   done
 else
-  roots+=("${managed_root_paths[@]}")
   while IFS= read -r rel_root; do
     [[ -n "$rel_root" ]] || continue
     roots+=("$HOME/$rel_root")
-  done < <(extra_roots)
+  done < <(managed_roots)
 fi
 
 if ((${#roots[@]} == 0)); then
@@ -216,27 +202,10 @@ if ((${#existing_roots[@]} == 0)); then
   exit 0
 fi
 
-declare -A managed_root_set=()
-for root in "${managed_root_paths[@]}"; do
-  managed_root_set["$root"]=1
-done
-
-declare -a existing_managed_roots=()
-for root in "${existing_roots[@]}"; do
-  if [[ -n "${managed_root_set[$root]:-}" ]]; then
-    existing_managed_roots+=("$root")
-  fi
-done
-
-if ((${#existing_managed_roots[@]})); then
-  debug ""
-  debug "Re-adding existing managed targets:"
-  printf '  %s\n' "${existing_managed_roots[@]}"
-  chezmoi re-add "${chezmoi_flags[@]}" "${existing_managed_roots[@]}"
-else
-  debug ""
-  debug "No existing managed targets to re-add."
-fi
+debug ""
+debug "Re-adding existing managed targets:"
+printf '  %s\n' "${existing_roots[@]}"
+chezmoi re-add "${chezmoi_flags[@]}" "${existing_roots[@]}"
 
 debug ""
 debug "Adding targets again to pick up new files:"
