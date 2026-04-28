@@ -10,8 +10,7 @@ brew install lua
 brew install switchaudio-osx
 brew install nowplaying-cli
 
-brew tap felixkratz/formulae
-brew install sketchybar
+say "Using sketchybar from Brewfile install"
 
 say "Installing sketchybar fonts"
 brew install --cask sf-symbols
