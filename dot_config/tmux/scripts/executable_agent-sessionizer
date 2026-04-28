@@ -471,7 +471,7 @@ run_picker() {
       --with-nth=8,9,10 \
       --nth=1,2,3 \
       --preview "$preview_cmd" \
-      --preview-window='right,45%,wrap' \
+      --preview-window='right,45%,nowrap' \
       --prompt='Pi > ' \
       --header=$'session:window.pane   status    title' \
       --cycle \
