@@ -8,12 +8,12 @@
     {
       "source": "npm:pi-provider-kiro",
       "extensions": [
-        "+dist/index.js"
+        "-dist/index.js"
       ]
     }
   ],
   "extensions": [
-    "~/workspaces/pi-diff-review/src/index.ts"
+    "~/workspaces/pi-slopchop/src/index.ts"
   ],
   "hideThinkingBlock": false,
   "enabledModels": [
