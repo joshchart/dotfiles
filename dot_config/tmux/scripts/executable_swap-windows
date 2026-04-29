@@ -10,11 +10,11 @@ WINDOWS=$(tmux list-windows -t "$SESSION" -F '#{window_index}: #{window_name}')
 PREVIEW_CMD="idx=\$(printf '%s' {} | cut -d: -f1 | tr -d ' '); pane=\$(tmux list-panes -t \"$SESSION:\$idx\" -F '#{?pane_active,#{pane_id},}' | grep . | head -n1); [ -n \"\$pane\" ] && tmux capture-pane -p -e -J -t \"\$pane\""
 
 # First popup - select source
-SOURCE=$(printf '%s\n' "$WINDOWS" | fzf --layout=default --prompt="Swap from: " --border --preview "$PREVIEW_CMD" --preview-window=right:60%:nowrap) || exit 0
+SOURCE=$(printf '%s\n' "$WINDOWS" | fzf --cycle --layout=default --prompt="Swap from: " --border --preview "$PREVIEW_CMD" --preview-window=right:60%:nowrap) || exit 0
 SOURCE_NUM=$(echo "$SOURCE" | cut -d: -f1)
 
 # Second popup - select target (excluding source)
-TARGET=$(printf '%s\n' "$WINDOWS" | grep -Fvx "$SOURCE" | fzf --layout=default --prompt="Swap with: " --border --preview "$PREVIEW_CMD" --preview-window=right:60%:nowrap) || exit 0
+TARGET=$(printf '%s\n' "$WINDOWS" | grep -Fvx "$SOURCE" | fzf --cycle --layout=default --prompt="Swap with: " --border --preview "$PREVIEW_CMD" --preview-window=right:60%:nowrap) || exit 0
 TARGET_NUM=$(echo "$TARGET" | cut -d: -f1)
 
 # Perform swap
