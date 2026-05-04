@@ -1,5 +1,5 @@
 theme = tokyonight
-font-size = 18
+font-size = 13
 window-save-state = always
 window-colorspace = "display-p3"
 
