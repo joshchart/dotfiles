@@ -30,9 +30,9 @@ import type {
   ExtensionContext,
   ExtensionUIContext,
   SessionEntry,
-} from "@mariozechner/pi-coding-agent";
-import type { TextContent } from "@mariozechner/pi-ai";
-import { Key } from "@mariozechner/pi-tui";
+} from "@earendil-works/pi-coding-agent";
+import type { TextContent } from "@earendil-works/pi-ai";
+import { Key } from "@earendil-works/pi-tui";
 
 export const PARROT_DESCRIPTION =
   "Open last AI message in external editor, then prefill pi input with the edited message after you save and exit";

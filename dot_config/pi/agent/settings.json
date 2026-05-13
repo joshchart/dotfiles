@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "0.72.1",
+  "lastChangelogVersion": "0.74.0",
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-5.4",
   "defaultThinkingLevel": "high",
@@ -10,7 +10,8 @@
       "extensions": [
         "-dist/index.js"
       ]
-    }
+    },
+    "git:github.com/joshchart/pi-sessionizer"
   ],
   "extensions": [
     "~/workspaces/pi-slopchop/src/index.ts"

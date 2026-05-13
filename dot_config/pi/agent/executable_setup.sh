@@ -39,7 +39,8 @@ if [ ! -f "$SETTINGS_PATH" ]; then
       "extensions": [
         "-dist/index.js"
       ]
-    }
+    },
+    "git:github.com/joshchart/pi-sessionizer"
   ],
   "extensions": [
     "$PI_SLOPCHOP_ENTRY"
@@ -78,6 +79,7 @@ data["packages"] = [
         "source": "npm:pi-provider-kiro",
         "extensions": ["-dist/index.js"],
     },
+    "git:github.com/joshchart/pi-sessionizer",
 ]
 data["extensions"] = [entry]
 data["hideThinkingBlock"] = False
@@ -98,6 +100,7 @@ fi
 echo "Installing packages..."
 pi install npm:pi-vim 2>/dev/null || echo "  pi-vim already installed"
 pi install npm:pi-provider-kiro 2>/dev/null || echo "  pi-provider-kiro already installed"
+pi install git:github.com/joshchart/pi-sessionizer 2>/dev/null || echo "  pi-sessionizer already installed"
 echo ""
 
 # Clone/update pi-slopchop in ~/workspaces
@@ -135,6 +138,7 @@ echo "Configured packages and extensions:"
 printf '  - %s\n' \
   npm:pi-vim \
   'npm:pi-provider-kiro (-dist/index.js)' \
+  git:github.com/joshchart/pi-sessionizer \
   "$PI_SLOPCHOP_ENTRY"
 
 echo ""
