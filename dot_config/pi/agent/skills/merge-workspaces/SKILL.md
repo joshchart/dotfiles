@@ -1,3 +1,8 @@
+---
+name: merge-workspaces
+description: "Read this skill to merge multiple JJ workspaces into a single linear history on main."
+---
+
 # Merging JJ Workspaces into Main
 
 This document describes how to merge multiple JJ workspaces into a single linear history on main.
