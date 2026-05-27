@@ -1,14 +1,14 @@
 {
-  "lastChangelogVersion": "0.74.0",
-  "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.4",
+  "lastChangelogVersion": "0.75.5",
+  "defaultProvider": "kiro",
+  "defaultModel": "auto",
   "defaultThinkingLevel": "high",
   "packages": [
     "npm:pi-vim",
     {
       "source": "npm:pi-provider-kiro",
       "extensions": [
-        "-dist/index.js"
+        "+dist/index.js"
       ]
     },
     "git:github.com/joshchart/pi-sessionizer"
