@@ -53,4 +53,6 @@ README.md
 .config/pi/agent/.cache/**
 .config/pi/agent/node_modules
 .config/pi/agent/node_modules/**
+.config/pi/agent/npm
+.config/pi/agent/npm/**
 .config/pi/agent/pi-crash.log
