@@ -1,28 +1,31 @@
 {
-  "lastChangelogVersion": "0.78.0",
+  "lastChangelogVersion": "0.85.0",
   "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.4",
+  "defaultModel": "gpt-5.6-terra",
   "defaultThinkingLevel": "high",
   "packages": [
-    "npm:pi-vim",
     {
       "source": "npm:pi-provider-kiro",
       "extensions": [
-        "+dist/index.js"
+        "-dist/index.js"
       ]
     },
-    "git:github.com/joshchart/pi-sessionizer"
+    "git:github.com/joshchart/pi-sessionizer",
+    "ssh://git@github.com/joshchart/pi-vim.git"
   ],
   "extensions": [
     "~/workspaces/pi-slopchop/src/index.ts"
   ],
   "hideThinkingBlock": false,
   "enabledModels": [
-    "openai-codex/gpt-5.4",
-    "openai-codex/gpt-5.5"
+    "openai-codex/gpt-5.6-luna",
+    "openai-codex/gpt-5.6-sol",
+    "openai-codex/gpt-5.6-terra"
   ],
   "theme": "tokyo-night",
   "quietStartup": true,
-  "enableInstallTelemetry": true,
-  "transport": "sse"
+  "enableInstallTelemetry": false,
+  "transport": "sse",
+  "fullscreenScrollbar": "auto",
+  "tuiMode": "fullscreen"
 }

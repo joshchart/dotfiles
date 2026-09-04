@@ -214,7 +214,7 @@
                                             "value": 1
                                         }
                                     },
-                                    { "shell_command": "open -a 'Spotify.app'" }
+                                    { "shell_command": "open -a 'Music.app'" }
                                 ],
                                 "type": "basic"
                             },

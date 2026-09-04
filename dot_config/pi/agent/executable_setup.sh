@@ -9,7 +9,8 @@ PI_SLOPCHOP_REPO_URL="https://github.com/joshchart/pi-slopchop.git"
 PI_SLOPCHOP_DIR="$WORKSPACES_DIR/pi-slopchop"
 PI_SLOPCHOP_ENTRY="~/workspaces/pi-slopchop/src/index.ts"
 PI_SLOPCHOP_ENTRY_PATH="$PI_SLOPCHOP_DIR/src/index.ts"
-LAST_CHANGELOG_VERSION="0.70.6"
+LAST_CHANGELOG_VERSION="0.85.0"
+PI_VIM_PACKAGE="ssh://git@github.com/joshchart/pi-vim.git"
 
 # Verify we're in the right place
 if [ "$SCRIPT_DIR" != "$EXPECTED_DIR" ]; then
@@ -33,7 +34,7 @@ if [ ! -f "$SETTINGS_PATH" ]; then
   "defaultModel": "gpt-5.4",
   "defaultThinkingLevel": "high",
   "packages": [
-    "npm:pi-vim",
+    "$PI_VIM_PACKAGE",
     {
       "source": "npm:pi-provider-kiro",
       "extensions": [
@@ -57,7 +58,7 @@ if [ ! -f "$SETTINGS_PATH" ]; then
 EOF
 else
   echo "settings.json already exists — syncing managed settings"
-  export SETTINGS_PATH PI_SLOPCHOP_ENTRY LAST_CHANGELOG_VERSION
+  export SETTINGS_PATH PI_SLOPCHOP_ENTRY LAST_CHANGELOG_VERSION PI_VIM_PACKAGE
   python3 <<'PY'
 import json
 import os
@@ -66,6 +67,7 @@ from pathlib import Path
 settings_path = Path(os.environ["SETTINGS_PATH"])
 entry = os.environ["PI_SLOPCHOP_ENTRY"]
 last_changelog_version = os.environ["LAST_CHANGELOG_VERSION"]
+pi_vim_package = os.environ["PI_VIM_PACKAGE"]
 
 data = json.loads(settings_path.read_text())
 
@@ -74,7 +76,7 @@ data["defaultProvider"] = "openai-codex"
 data["defaultModel"] = "gpt-5.4"
 data["defaultThinkingLevel"] = "high"
 data["packages"] = [
-    "npm:pi-vim",
+    pi_vim_package,
     {
         "source": "npm:pi-provider-kiro",
         "extensions": ["-dist/index.js"],
@@ -98,7 +100,7 @@ fi
 
 # Install packages used by this config
 echo "Installing packages..."
-pi install npm:pi-vim 2>/dev/null || echo "  pi-vim already installed"
+pi install "$PI_VIM_PACKAGE" 2>/dev/null || echo "  pi-vim already installed"
 pi install npm:pi-provider-kiro 2>/dev/null || echo "  pi-provider-kiro already installed"
 pi install git:github.com/joshchart/pi-sessionizer 2>/dev/null || echo "  pi-sessionizer already installed"
 echo ""
@@ -136,7 +138,7 @@ fi
 
 echo "Configured packages and extensions:"
 printf '  - %s\n' \
-  npm:pi-vim \
+  "$PI_VIM_PACKAGE" \
   'npm:pi-provider-kiro (-dist/index.js)' \
   git:github.com/joshchart/pi-sessionizer \
   "$PI_SLOPCHOP_ENTRY"
